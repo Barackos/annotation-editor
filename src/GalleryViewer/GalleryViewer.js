@@ -2,10 +2,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
 import ListSubheader from '@material-ui/core/ListSubheader';
-import IconButton from '@material-ui/core/IconButton';
-import InfoIcon from '@material-ui/icons/Info';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -21,6 +18,9 @@ const useStyles = makeStyles((theme) => ({
   },
   icon: {
     color: 'rgba(255, 255, 255, 0.54)',
+  },
+  tile: {
+    cursor: 'pointer',
   },
 }));
 
@@ -47,21 +47,12 @@ export default function GalleryViewer({ images, onImageSelected }) {
   return (
     <div className={classes.root}>
       <GridList cellHeight={180} className={classes.gridList}>
-        <GridListTile key="Subheader" cols={2} style={{ height: 'auto' }}>
+        <GridListTile key="Subheader" cols={4} style={{ height: 'auto' }}>
           <ListSubheader component="div">Choose an image</ListSubheader>
         </GridListTile>
-        {images.map(({img, title = "סתם", author = "סתם שוב"}) => (
-          <GridListTile key={img}>
+        {images.map(({img, title = "", author = ""}) => (
+          <GridListTile key={img} className={classes.tile}>
             <img src={img} alt={title} onClick={() => onImageSelected(img)}/>
-            <GridListTileBar
-              title={title}
-              subtitle={<span>by: {author}</span>}
-              actionIcon={
-                <IconButton aria-label={`info about ${title}`} className={classes.icon}>
-                  <InfoIcon />
-                </IconButton>
-              }
-            />
           </GridListTile>
         ))}
       </GridList>
