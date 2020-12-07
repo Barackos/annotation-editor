@@ -99,7 +99,7 @@ export default function ToolbarButtons({ painterState }) {
           <ListItemIcon>
             <PhotoSizeSelectActualIcon fontSize="large" />
           </ListItemIcon>
-          <ListItemText primary={"PickNewImage"} />
+          <ListItemText primary={"New Image"} />
         </ListItem>
       </List>
     </>

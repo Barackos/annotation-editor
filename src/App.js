@@ -96,7 +96,6 @@ const onPainterRender = (renderProps, state) => {
   return (
     <div className="canvasContainer">
       <div class="canvas">{canvas}</div>
-      <PainterToolbar toolbarState={state} />
     </div>
   );
 };
@@ -148,51 +147,55 @@ function App() {
           <AppBar
             position="fixed"
             className={clsx(classes.appBar, {
-              [classes.appBarShift]: open,
+              [classes.appBarShift]: !showGallery && open,
             })}
           >
             <Toolbar>
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                onClick={handleDrawerOpen}
-                edge="start"
-                className={clsx(classes.menuButton, {
-                  [classes.hide]: open,
-                })}
-              >
-                <MenuIcon />
-              </IconButton>
+              {!showGallery && (
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  onClick={handleDrawerOpen}
+                  edge="start"
+                  className={clsx(classes.menuButton, {
+                    [classes.hide]: open,
+                  })}
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
               <Typography variant="h4" noWrap>
                 Polygon Annotation Editor
               </Typography>
             </Toolbar>
           </AppBar>
-          <Drawer
-            variant="permanent"
-            className={clsx(classes.drawer, {
-              [classes.drawerOpen]: open,
-              [classes.drawerClose]: !open,
-            })}
-            classes={{
-              paper: clsx({
+          {!showGallery && (
+            <Drawer
+              variant="permanent"
+              className={clsx(classes.drawer, {
                 [classes.drawerOpen]: open,
                 [classes.drawerClose]: !open,
-              }),
-            }}
-          >
-            <div className={classes.toolbar}>
-              <IconButton onClick={handleDrawerClose}>
-                {theme.direction === "rtl" ? (
-                  <ChevronRightIcon />
-                ) : (
-                  <ChevronLeftIcon />
-                )}
-              </IconButton>
-            </div>
-            <Divider />
-            <ToolbarButtons painterState={painterState} />
-          </Drawer>
+              })}
+              classes={{
+                paper: clsx({
+                  [classes.drawerOpen]: open,
+                  [classes.drawerClose]: !open,
+                }),
+              }}
+            >
+              <div className={classes.toolbar}>
+                <IconButton onClick={handleDrawerClose}>
+                  {theme.direction === "rtl" ? (
+                    <ChevronRightIcon />
+                  ) : (
+                    <ChevronLeftIcon />
+                  )}
+                </IconButton>
+              </div>
+              <Divider />
+              <ToolbarButtons painterState={painterState} />
+            </Drawer>
+          )}
           <main className={classes.content}>
             <div className={classes.toolbar} />
             {showGallery ? (
