@@ -15,8 +15,8 @@ import CardContent from "@material-ui/core/CardContent";
 import "./Painter.scss";
 
 const onRender = (renderProps, state) => {
-  const { triggerSave, canvas } = renderProps;
-  const { drawable, setDrawable, uploadFn, handleUndo, handleRedo } = state;
+  const { canvas } = renderProps;
+  const { drawable, setDrawable, uploadFn, handleUndo, handleRedo, handleSave } = state;
   return (
     <div className="canvasContainer">
       <div class="canvas">{canvas}</div>
@@ -38,7 +38,8 @@ const onRender = (renderProps, state) => {
           <Button variant="contained" color="primary" onClick={handleRedo}>
             <RedoIcon fontSize="large" />
           </Button>
-          <Button onClick={triggerSave} variant="contained" color="primary">
+          {/* <Button onClick={triggerSave} variant="contained" color="primary"> */}
+          <Button onClick={handleSave} variant="contained" color="primary">
             <SaveIcon fontSize="large" />
           </Button>
           <Button variant="contained" color="primary">
@@ -63,6 +64,7 @@ function Painter({ imgUrl, uploadFn }) {
     uploadFn,
     handleUndo: () => painterRef.current.handleUndo(),
     handleRedo: () => painterRef.current.handleRedo(),
+    handleSave: () => painterRef.current.handleSave(),
   };
   return (
     <ReactPainter

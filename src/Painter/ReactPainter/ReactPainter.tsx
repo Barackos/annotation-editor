@@ -1,6 +1,6 @@
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { canvasToBlob, composeFn, fileToUrl, importImage, revokeUrl } from './util';
+import { canvasToBlob, composeFn, downloadObjectAsJson, fileToUrl, importImage, revokeUrl } from './util';
 
 // disable touchAction, else the draw on canvas would not work
 // because window would scroll instead of draw on it
@@ -329,6 +329,11 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
         });
       })
       .catch(err => console.error('in ReactPainter handleSaveBlob', err));
+  };
+
+  handleSave = () => {
+    const { undoSteps } = this.state;
+    downloadObjectAsJson(undoSteps, "Annotation");
   };
 
   handleLoad = () => {
