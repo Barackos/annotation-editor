@@ -9,14 +9,23 @@ const images = [
 ];
 
 function App() {
-  const [imageUrl, setImageUrl] = useState(images[0]);
-  const uploadFn = () => {
+  const [imageUrl, setImageUrl] = useState("");
+  const [showGallery, setGalleryShown] = useState(true);
+  const openGallery = () => {
     setImageUrl(images[Math.floor(Math.random() * 3)]);
+    setGalleryShown(!showGallery);
   };
+  const onImageSelected = (url) => {
+    setImageUrl(url);
+    setGalleryShown(false);
+  }
   return (
     <>
-      {imageUrl && <Painter imgUrl={imageUrl} uploadFn={uploadFn} />}
-      <GalleryViewer images={images.map(url => ({ img: url }))} />
+      {showGallery ? (
+        <GalleryViewer images={images.map((url) => ({ img: url }))} onImageSelected={onImageSelected} />
+      ) : (
+        <Painter imgUrl={imageUrl} uploadFn={openGallery} />
+      )}
     </>
   );
 }

@@ -41,18 +41,18 @@ const useStyles = makeStyles((theme) => ({
  *   },
  * ];
  */
-export default function GalleryViewer({ images }) {
+export default function GalleryViewer({ images, onImageSelected }) {
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
       <GridList cellHeight={180} className={classes.gridList}>
         <GridListTile key="Subheader" cols={2} style={{ height: 'auto' }}>
-          <ListSubheader component="div">December</ListSubheader>
+          <ListSubheader component="div">Choose an image</ListSubheader>
         </GridListTile>
         {images.map(({img, title = "סתם", author = "סתם שוב"}) => (
           <GridListTile key={img}>
-            <img src={img} alt={title} />
+            <img src={img} alt={title} onClick={() => onImageSelected(img)}/>
             <GridListTileBar
               title={title}
               subtitle={<span>by: {author}</span>}
