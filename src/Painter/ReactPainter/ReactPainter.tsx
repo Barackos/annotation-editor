@@ -73,7 +73,8 @@ export interface PainterState {
   lineWidth: number;
   lineJoin: LineJoinType;
   lineCap: LineCapType;
-  dataSteps: DataStep[][];
+  dataSteps: DataStep[];
+  currStepStartingIdx: number;
 }
 
 export class ReactPainter extends React.Component<ReactPainterProps, PainterState> {
@@ -87,7 +88,8 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     onSave: PropTypes.func,
     render: PropTypes.func,
     width: PropTypes.number,
-    dataSteps: PropTypes.arrayOf(PropTypes.string),
+    dataSteps: PropTypes.arrayOf(PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })),
+    currStepStartingIdx: PropTypes.number,
   };
 
   static defaultProps: Partial<ReactPainterProps> = {
@@ -120,6 +122,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     lineJoin: this.props.initialLineJoin,
     lineWidth: this.props.initialLineWidth,
     dataSteps: [],
+    currStepStartingIdx: 0,
   };
 
   extractOffSetFromEvent = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
@@ -196,18 +199,23 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
 
   handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
+    const { dataSteps } = this.state;
     this.lastX = offsetX;
     this.lastY = offsetY;
+
+    const currStepStartingIdx = dataSteps.push({ x: this.lastX, y: this.lastY }) - 1;
+
     if(this.props.isDrawable){
       this.setState({
-        isDrawing: true
+        isDrawing: true,
+        currStepStartingIdx,
       });
     }
   };
 
   handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { color, lineWidth, lineCap, lineJoin } = this.state;
-    if (this.state.isDrawing) {
+    const { color, lineWidth, lineCap, lineJoin, isDrawing, dataSteps } = this.state;
+    if (isDrawing) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const ctx = this.ctx;
       ctx.strokeStyle = color;
@@ -223,29 +231,57 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       ctx.stroke();
       this.lastX = offsetX;
       this.lastY = offsetY;
+
+      //Update DataSteps
+      dataSteps.push({ x: offsetX, y: offsetY });
+      this.setState({ dataSteps });
     }
+  };
+
+  handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
+    const { isDrawing, dataSteps, currStepStartingIdx } = this.state;
+    if (isDrawing) {
+      if (currStepStartingIdx + 1 === dataSteps.length)
+        dataSteps.pop();
+    }
+    this.setState({
+      isDrawing: false,
+      dataSteps,
+      currStepStartingIdx: 0,
+    });
   };
 
   handleUndo = () => {
     const { dataSteps } = this.state;
-    console.log("handle Undo is activated");
-    // const lastStep = dataSteps.pop();
+    if (dataSteps.length > 0) {
+      dataSteps.pop();
+      this.handleRedraw(dataSteps);
+    }
 
     this.setState({
       dataSteps,
     });
   }
 
-  handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { isDrawing, dataSteps } = this.state;
-    if (isDrawing) {
-      // dataSteps.push(this.canvasRef.toDataURL());
-    }
-    this.setState({
-      isDrawing: false,
-      dataSteps,
+  handleRedraw = (dataSteps: DataStep[]) => {
+    const { width, height } = this.canvasRef;
+    const ratio = width / 1280.0;
+    const ctx = this.ctx;
+    
+    if(dataSteps.length === 0){return;}
+    const [firstStep, ...rest] = dataSteps;
+
+    // ctx.clearRect(0, 0, width, height);
+    this.loadImage(this.props.image, 1280, height / ratio).then(() => {
+      ctx.beginPath();
+      ctx.moveTo(firstStep.x, firstStep.y);
+  
+      rest.forEach(step => {
+        ctx.lineTo(step.x, step.y);
+      })
+      ctx.stroke();
     });
-  };
+  }
 
   handleSave = () => {
     const { onSave } = this.props;
@@ -314,7 +350,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     };
   };
 
-  loadImage = (image: string | File, width: number, height: number) => {
+  loadImage = (image: string | File, width: number, height: number) => 
     importImage(image)
       .then(({ img, imgWidth, imgHeight }) => {
         console.log("asdfasdf: ", imgWidth, imgHeight)
@@ -330,7 +366,6 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
         });
         this.initializeCanvas(width, height);
       });
-  }
 
   componentDidMount() {
     const { width, height, image } = this.props;
