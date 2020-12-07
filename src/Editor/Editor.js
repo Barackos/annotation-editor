@@ -1,9 +1,9 @@
 import Painter from "../Painter";
 import { useState } from "react";
 import ProGalleryViewer from "../ProGalleryViewer";
-import { makeStyles } from "@material-ui/core/styles";
 import firebase from "firebase/app";
 import "firebase/storage";
+import MiniDrawer from "../Drawer";
 
 const images = [
   "pexels-david-savochka-192384.jpg",
@@ -14,14 +14,7 @@ const images = [
   "pexels-александар-цветановић-1560424.jpg",
 ].map((imgName) => "./images/" + imgName);
 
-const useStyles = makeStyles((theme) => ({
-  gallery: {
-    width: 800,
-  },
-}));
-
 function App() {
-  const classes = useStyles();
   const [imageUrl, setImageUrl] = useState("");
   const [showGallery, setGalleryShown] = useState(true);
   const openGallery = () => {
@@ -34,17 +27,16 @@ function App() {
     setGalleryShown(false);
   };
   return (
-    <>
+    <MiniDrawer>
       {showGallery ? (
         <ProGalleryViewer
-          className={classes.gallery}
           images={images.map((url) => ({ img: url }))}
           onImageSelected={onImageSelected}
         />
       ) : (
         <Painter imgUrl={imageUrl} uploadFn={openGallery} />
       )}
-    </>
+    </MiniDrawer>
   );
 }
 
