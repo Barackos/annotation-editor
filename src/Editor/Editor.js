@@ -4,6 +4,7 @@ import GalleryViewer from "../GalleryViewer";
 import { makeStyles } from "@material-ui/core/styles";
 import firebase from "firebase/app";
 import "firebase/storage";
+import ProGalleryViewer from "../ProGalleryViewer";
 
 const images = [
   "pexels-david-savochka-192384.jpg",
@@ -36,7 +37,7 @@ function App() {
   return (
     <>
       {showGallery ? (
-        <GalleryViewer
+        <ProGalleryViewer
           className={classes.gallery}
           images={images.map((url) => ({ img: url }))}
           onImageSelected={onImageSelected}
