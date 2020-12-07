@@ -6,10 +6,10 @@ import CreateIcon from "@material-ui/icons/Create";
 import DeleteIcon from "@material-ui/icons/Delete";
 import SaveIcon from "@material-ui/icons/Save";
 import GestureIcon from "@material-ui/icons/Gesture";
-import PhotoSizeSelectActualIcon from '@material-ui/icons/PhotoSizeSelectActual';
-import Divider from '@material-ui/core/Divider';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
+import PhotoSizeSelectActualIcon from "@material-ui/icons/PhotoSizeSelectActual";
+import Divider from "@material-ui/core/Divider";
+import Card from "@material-ui/core/Card";
+import CardContent from "@material-ui/core/CardContent";
 import "./Painter.scss";
 
 const onRender = (renderProps, state) => {
@@ -20,7 +20,11 @@ const onRender = (renderProps, state) => {
       <div class="canvas">{canvas}</div>
       <Card className="card">
         <CardContent className="toolBox">
-          <Button onClick={() => setDrawable(!drawable)} variant={drawable ? "outlined" : "contained"} color="primary">
+          <Button
+            onClick={() => setDrawable(!drawable)}
+            variant={drawable ? "outlined" : "contained"}
+            color="primary"
+          >
             <CreateIcon fontSize="large" />
           </Button>
           <Button variant="contained" color="primary">
