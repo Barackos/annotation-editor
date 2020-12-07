@@ -218,7 +218,6 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       ctx.restore();
       this.lastX = offsetX;
       this.lastY = offsetY;
-      console.log(`Drawing: ${this.lastX}, ${this.lastY}`)
     }
   };
 
