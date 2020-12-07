@@ -240,21 +240,29 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
 
   handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { isDrawing, dataSteps, currStepStartingIdx } = this.state;
+    let steps = dataSteps;
     if (isDrawing) {
-      if (currStepStartingIdx + 1 === dataSteps.length)
+      // Edge case - if mouseDown & instant mouseUp - nothing was drawn
+      if (currStepStartingIdx + 1 === dataSteps.length) {
         dataSteps.pop();
+      }
+      const firstSteps = dataSteps.slice(0, currStepStartingIdx || 1);
+      steps = [ ...firstSteps, dataSteps[dataSteps.length - 1]];
+      this.handleRedraw(steps);
+      this.setState({
+        isDrawing: false,
+        dataSteps: steps,
+        currStepStartingIdx: 0,
+      });
     }
-    this.setState({
-      isDrawing: false,
-      dataSteps,
-      currStepStartingIdx: 0,
-    });
   };
 
   handleUndo = () => {
     const { dataSteps } = this.state;
     if (dataSteps.length > 0) {
       dataSteps.pop();
+      if(dataSteps.length === 1)
+        dataSteps.pop();
       this.handleRedraw(dataSteps);
     }
 
@@ -268,12 +276,12 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     const ratio = width / 1280.0;
     const ctx = this.ctx;
     
-    if(dataSteps.length === 0){return;}
-    const [firstStep, ...rest] = dataSteps;
-
+    
     // ctx.clearRect(0, 0, width, height);
     this.loadImage(this.props.image, 1280, height / ratio).then(() => {
+      if(dataSteps.length === 0){return;}
       ctx.beginPath();
+      const [firstStep, ...rest] = dataSteps;
       ctx.moveTo(firstStep.x, firstStep.y);
   
       rest.forEach(step => {
@@ -353,7 +361,6 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
   loadImage = (image: string | File, width: number, height: number) => 
     importImage(image)
       .then(({ img, imgWidth, imgHeight }) => {
-        console.log("asdfasdf: ", imgWidth, imgHeight)
         this.initializeCanvas(width, height, imgWidth, imgHeight);
         this.ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
         this.setState({
