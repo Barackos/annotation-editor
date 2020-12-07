@@ -58,6 +58,10 @@ export interface ReactPainterProps {
   image?: File | string;
   render?: (props: RenderProps) => JSX.Element;
 }
+interface DataStep {
+  x: number;
+  y: number;
+}
 
 export interface PainterState {
   canvasHeight: number;
@@ -69,6 +73,7 @@ export interface PainterState {
   lineWidth: number;
   lineJoin: LineJoinType;
   lineCap: LineCapType;
+  dataSteps: DataStep[][];
 }
 
 export class ReactPainter extends React.Component<ReactPainterProps, PainterState> {
@@ -81,7 +86,8 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     lineWidth: PropTypes.number,
     onSave: PropTypes.func,
     render: PropTypes.func,
-    width: PropTypes.number
+    width: PropTypes.number,
+    dataSteps: PropTypes.arrayOf(PropTypes.string),
   };
 
   static defaultProps: Partial<ReactPainterProps> = {
@@ -112,7 +118,8 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     isDrawing: false,
     lineCap: this.props.initialLineCap,
     lineJoin: this.props.initialLineJoin,
-    lineWidth: this.props.initialLineWidth
+    lineWidth: this.props.initialLineWidth,
+    dataSteps: [],
   };
 
   extractOffSetFromEvent = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
@@ -214,21 +221,29 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       ctx.moveTo(lastX, lastY);
       ctx.lineTo(offsetX, offsetY);
       ctx.stroke();
-      ctx.save();
-      ctx.restore();
       this.lastX = offsetX;
       this.lastY = offsetY;
     }
   };
 
   handleUndo = () => {
-    const ctx = this.ctx;
-    ctx.restore();
+    const { dataSteps } = this.state;
+    console.log("handle Undo is activated");
+    // const lastStep = dataSteps.pop();
+
+    this.setState({
+      dataSteps,
+    });
   }
 
   handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
+    const { isDrawing, dataSteps } = this.state;
+    if (isDrawing) {
+      // dataSteps.push(this.canvasRef.toDataURL());
+    }
     this.setState({
-      isDrawing: false
+      isDrawing: false,
+      dataSteps,
     });
   };
 
@@ -273,7 +288,6 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       onMouseDown,
       onTouchStart,
       onMouseMove,
-      onUndo,
       onTouchMove,
       onMouseUp,
       onTouchEnd,
@@ -284,7 +298,6 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     return {
       onMouseDown: composeFn(onMouseDown, this.handleMouseDown),
       onMouseMove: composeFn(onMouseMove, this.handleMouseMove),
-      onUndo: composeFn(onUndo, this.handleUndo),
       onMouseUp: composeFn(onMouseUp, this.handleMouseUp),
       onTouchEnd: composeFn(onTouchEnd, this.handleMouseUp),
       onTouchMove: composeFn(onTouchMove, this.handleMouseMove),
@@ -301,24 +314,29 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     };
   };
 
+  loadImage = (image: string | File, width: number, height: number) => {
+    importImage(image)
+      .then(({ img, imgWidth, imgHeight }) => {
+        console.log("asdfasdf: ", imgWidth, imgHeight)
+        this.initializeCanvas(width, height, imgWidth, imgHeight);
+        this.ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+        this.setState({
+          imageCanDownload: true
+        });
+      })
+      .catch(err => {
+        this.setState({
+          imageCanDownload: false
+        });
+        this.initializeCanvas(width, height);
+      });
+  }
+
   componentDidMount() {
     const { width, height, image } = this.props;
     setUpForCanvas();
     if (image) {
-      importImage(image)
-        .then(({ img, imgWidth, imgHeight }) => {
-          this.initializeCanvas(width, height, imgWidth, imgHeight);
-          this.ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
-          this.setState({
-            imageCanDownload: true
-          });
-        })
-        .catch(err => {
-          this.setState({
-            imageCanDownload: false
-          });
-          this.initializeCanvas(width, height);
-        });
+      this.loadImage(image, width, height);
     } else {
       this.initializeCanvas(width, height);
     }

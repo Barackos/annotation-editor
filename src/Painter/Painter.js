@@ -4,6 +4,7 @@ import { ReactPainter } from "./ReactPainter";
 import { Button } from "@material-ui/core";
 import CreateIcon from "@material-ui/icons/Create";
 import DeleteIcon from "@material-ui/icons/Delete";
+import UndoIcon from "@material-ui/icons/Undo";
 import SaveIcon from "@material-ui/icons/Save";
 import GestureIcon from "@material-ui/icons/Gesture";
 import PhotoSizeSelectActualIcon from "@material-ui/icons/PhotoSizeSelectActual";
@@ -14,7 +15,7 @@ import "./Painter.scss";
 
 const onRender = (renderProps, state) => {
   const { triggerSave, canvas } = renderProps;
-  const { drawable, setDrawable, uploadFn } = state;
+  const { drawable, setDrawable, uploadFn, handleUndo } = state;
   return (
     <div className="canvasContainer">
       <div class="canvas">{canvas}</div>
@@ -29,6 +30,9 @@ const onRender = (renderProps, state) => {
           </Button>
           <Button variant="contained" color="primary">
             <DeleteIcon fontSize="large" />
+          </Button>
+          <Button variant="contained" color="primary">
+            <UndoIcon fontSize="large" onClick={handleUndo} />
           </Button>
           <Button onClick={triggerSave} variant="contained" color="primary">
             <SaveIcon fontSize="large" />
@@ -53,6 +57,7 @@ function Painter({ imgUrl, uploadFn }) {
     drawable,
     setDrawable,
     uploadFn,
+    handleUndo: () => painterRef.current.handleUndo(),
   };
   return (
     <ReactPainter
