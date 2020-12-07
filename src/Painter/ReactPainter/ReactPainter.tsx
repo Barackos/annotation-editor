@@ -73,7 +73,8 @@ export interface PainterState {
   lineWidth: number;
   lineJoin: LineJoinType;
   lineCap: LineCapType;
-  dataSteps: DataStep[];
+  undoSteps: DataStep[];
+  redoSteps: DataStep[];
   currStepStartingIdx: number;
 }
 
@@ -88,7 +89,8 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     onSave: PropTypes.func,
     render: PropTypes.func,
     width: PropTypes.number,
-    dataSteps: PropTypes.arrayOf(PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })),
+    undoSteps: PropTypes.arrayOf(PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })),
+    redoSteps: PropTypes.arrayOf(PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })),
     currStepStartingIdx: PropTypes.number,
   };
 
@@ -121,7 +123,8 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     lineCap: this.props.initialLineCap,
     lineJoin: this.props.initialLineJoin,
     lineWidth: this.props.initialLineWidth,
-    dataSteps: [],
+    undoSteps: [],
+    redoSteps: [],
     currStepStartingIdx: 0,
   };
 
@@ -199,11 +202,11 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
 
   handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
-    const { dataSteps } = this.state;
+    const { undoSteps } = this.state;
     this.lastX = offsetX;
     this.lastY = offsetY;
 
-    const currStepStartingIdx = dataSteps.push({ x: this.lastX, y: this.lastY }) - 1;
+    const currStepStartingIdx = undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
 
     if(this.props.isDrawable){
       this.setState({
@@ -213,65 +216,90 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     }
   };
 
+  draw = (lastX: number, lastY: number, newX: number, newY: number) => {
+    const { color, lineWidth, lineCap, lineJoin, undoSteps } = this.state;
+    const ctx = this.ctx;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth * this.scalingFactor;
+    ctx.lineCap = lineCap;
+    ctx.lineJoin = lineJoin;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(newX, newY);
+    ctx.stroke();
+    this.lastX = newX;
+    this.lastY = newY;
+    
+    //Update undoSteps
+    if (undoSteps.length === 0) {
+      undoSteps.push({ x: lastX, y: lastY });
+    }
+    undoSteps.push({ x: newX, y: newY });
+    this.setState({ undoSteps });
+  }
+
   handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { color, lineWidth, lineCap, lineJoin, isDrawing, dataSteps } = this.state;
+    const { isDrawing } = this.state;
     if (isDrawing) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
-      const ctx = this.ctx;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * this.scalingFactor;
-      ctx.lineCap = lineCap;
-      ctx.lineJoin = lineJoin;
       const lastX = this.lastX;
       const lastY = this.lastY;
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(offsetX, offsetY);
-      ctx.stroke();
-      this.lastX = offsetX;
-      this.lastY = offsetY;
-
-      //Update DataSteps
-      dataSteps.push({ x: offsetX, y: offsetY });
-      this.setState({ dataSteps });
+      this.draw(lastX, lastY, offsetX, offsetY);
     }
   };
 
   handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { isDrawing, dataSteps, currStepStartingIdx } = this.state;
-    let steps = dataSteps;
+    const { isDrawing, undoSteps, redoSteps, currStepStartingIdx } = this.state;
+    let steps = undoSteps;
+    let clearRedo = false;
     if (isDrawing) {
       // Edge case - if mouseDown & instant mouseUp - nothing was drawn
-      if (currStepStartingIdx + 1 === dataSteps.length) {
-        dataSteps.pop();
-      }
-      const firstSteps = dataSteps.slice(0, currStepStartingIdx || 1);
-      steps = [ ...firstSteps, dataSteps[dataSteps.length - 1]];
+      if (currStepStartingIdx + 1 === undoSteps.length)
+        steps.pop();
+      else
+        clearRedo = true;
+      const firstSteps = undoSteps.slice(0, currStepStartingIdx || 1);
+      steps = [ ...firstSteps, undoSteps[undoSteps.length - 1]];
       this.handleRedraw(steps);
       this.setState({
         isDrawing: false,
-        dataSteps: steps,
+        undoSteps: steps,
+        redoSteps: clearRedo ? [] : redoSteps,
         currStepStartingIdx: 0,
       });
     }
   };
 
   handleUndo = () => {
-    const { dataSteps } = this.state;
-    if (dataSteps.length > 0) {
-      dataSteps.pop();
-      if(dataSteps.length === 1)
-        dataSteps.pop();
-      this.handleRedraw(dataSteps);
+    const { undoSteps, redoSteps } = this.state;
+    if (undoSteps.length > 0) {
+      redoSteps.push(undoSteps.pop());
+      if(undoSteps.length === 1)
+        redoSteps.push(undoSteps.pop());
+      this.handleRedraw(undoSteps);
     }
 
     this.setState({
-      dataSteps,
+      undoSteps,
     });
   }
 
-  handleRedraw = (dataSteps: DataStep[]) => {
+  handleRedo = () => {
+    const { undoSteps, redoSteps } = this.state;
+    if (redoSteps.length === 0) return;
+
+    const { x: prevX, y: prevY } = undoSteps.length > 0 ? undoSteps[undoSteps.length - 1] : redoSteps.pop();
+    const { x, y } = redoSteps.pop();
+
+    this.draw(prevX, prevY, x, y);
+
+    this.setState({
+      redoSteps,
+    });
+  }
+
+  handleRedraw = (undoSteps: DataStep[]) => {
     const { width, height } = this.canvasRef;
     const ratio = width / 1280.0;
     const ctx = this.ctx;
@@ -279,9 +307,9 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     
     // ctx.clearRect(0, 0, width, height);
     this.loadImage(this.props.image, 1280, height / ratio).then(() => {
-      if(dataSteps.length === 0){return;}
+      if(undoSteps.length === 0){return;}
       ctx.beginPath();
-      const [firstStep, ...rest] = dataSteps;
+      const [firstStep, ...rest] = undoSteps;
       ctx.moveTo(firstStep.x, firstStep.y);
   
       rest.forEach(step => {
@@ -291,7 +319,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     });
   }
 
-  handleSave = () => {
+  handleSaveBlob = () => {
     const { onSave } = this.props;
     canvasToBlob(this.canvasRef, 'image/png')
       .then((blob: Blob) => {
@@ -300,7 +328,11 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
           imageDownloadUrl: fileToUrl(blob)
         });
       })
-      .catch(err => console.error('in ReactPainter handleSave', err));
+      .catch(err => console.error('in ReactPainter handleSaveBlob', err));
+  };
+
+  handleLoad = () => {
+    
   };
 
   handleSetColor = (color: string) => {
@@ -403,7 +435,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
           setLineCap: this.handleSetLineCap,
           setLineJoin: this.handleSetLineJoin,
           setLineWidth: this.handleSetLineWidth,
-          triggerSave: this.handleSave
+          triggerSave: this.handleSaveBlob
         })
       : canvasNode;
   }
