@@ -1,10 +1,9 @@
 import Painter from "../Painter";
 import { useState } from "react";
-import GalleryViewer from "../GalleryViewer";
+import ProGalleryViewer from "../ProGalleryViewer";
 import { makeStyles } from "@material-ui/core/styles";
 import firebase from "firebase/app";
 import "firebase/storage";
-import ProGalleryViewer from "../ProGalleryViewer";
 
 const images = [
   "pexels-david-savochka-192384.jpg",
