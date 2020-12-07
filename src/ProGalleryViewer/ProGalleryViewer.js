@@ -1,7 +1,7 @@
 import React from "react";
+import { Typography } from "@material-ui/core";
 import { ProGallery } from "pro-gallery";
 import "pro-gallery/dist/statics/main.css";
-import { Typography } from "@material-ui/core";
 
 export default function ProGalleryViewer({ images, onImageSelected }) {
   // const classes = useStyles();
