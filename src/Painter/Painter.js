@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 // import { ReactPainter } from "react-painter";
-import { ReactPainter } from "./ReactPainter";
+import { ReactPainter } from "../ReactPainter";
 import { Button } from "@material-ui/core";
 import CreateIcon from "@material-ui/icons/Create";
 import DeleteIcon from "@material-ui/icons/Delete";
