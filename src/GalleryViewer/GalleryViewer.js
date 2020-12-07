@@ -13,8 +13,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
   },
   gridList: {
-    width: 500,
-    height: 450,
+    width: 1200,
+    height: 650,
   },
   icon: {
     color: 'rgba(255, 255, 255, 0.54)',
@@ -49,8 +49,8 @@ export default function GalleryViewer({ images, onImageSelected }) {
 
   return (
     <div className={classes.root}>
-      <GridList cellHeight={180} className={classes.gridList}>
-        <GridListTile key="Subheader" cols={4} style={{ height: 'auto' }}>
+      <GridList cellHeight={180} className={classes.gridList} width= 'auto'>
+        <GridListTile key="Subheader" cols={2} style={{ height: 'auto' }}>
           <ListSubheader component="div" className={classes.subheader}>Choose an image</ListSubheader>
         </GridListTile>
         {images.map(({img, title = "", author = ""}) => (
