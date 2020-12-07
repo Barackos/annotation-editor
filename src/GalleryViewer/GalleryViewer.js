@@ -22,6 +22,9 @@ const useStyles = makeStyles((theme) => ({
   tile: {
     cursor: 'pointer',
   },
+  subheader: {
+    fontSize: 28,
+  },
 }));
 
 /**
@@ -48,7 +51,7 @@ export default function GalleryViewer({ images, onImageSelected }) {
     <div className={classes.root}>
       <GridList cellHeight={180} className={classes.gridList}>
         <GridListTile key="Subheader" cols={4} style={{ height: 'auto' }}>
-          <ListSubheader component="div">Choose an image</ListSubheader>
+          <ListSubheader component="div" className={classes.subheader}>Choose an image</ListSubheader>
         </GridListTile>
         {images.map(({img, title = "", author = ""}) => (
           <GridListTile key={img} className={classes.tile}>
