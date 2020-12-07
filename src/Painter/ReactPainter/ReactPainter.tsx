@@ -201,14 +201,13 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
   };
 
   handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
-    const { undoSteps } = this.state;
-    this.lastX = offsetX;
-    this.lastY = offsetY;
+    if(this.props.isDrawable) {
+      const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
+      const { undoSteps } = this.state;
+      this.lastX = offsetX;
+      this.lastY = offsetY;
 
-    const currStepStartingIdx = undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
-
-    if(this.props.isDrawable){
+      const currStepStartingIdx = undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
       this.setState({
         isDrawing: true,
         currStepStartingIdx,
@@ -241,7 +240,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
 
   handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { isDrawing } = this.state;
-    if (isDrawing) {
+    if (this.props.isDrawable && isDrawing) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const lastX = this.lastX;
       const lastY = this.lastY;
@@ -251,25 +250,30 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
 
   handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { isDrawing, undoSteps, redoSteps, currStepStartingIdx } = this.state;
-    let steps = undoSteps;
-    let clearRedo = false;
-    if (isDrawing) {
-      // Edge case - if mouseDown & instant mouseUp - nothing was drawn
-      if (currStepStartingIdx + 1 === undoSteps.length)
-        steps.pop();
-      else
-        clearRedo = true;
-      const firstSteps = undoSteps.slice(0, currStepStartingIdx || 1);
-      steps = [ ...firstSteps, undoSteps[undoSteps.length - 1]];
-      this.handleRedraw(steps);
-      this.setState({
-        isDrawing: false,
-        undoSteps: steps,
-        redoSteps: clearRedo ? [] : redoSteps,
-        currStepStartingIdx: 0,
-      });
+    if (this.props.isDrawable) {
+      let steps = undoSteps;
+      let clearRedo = false;
+      if (isDrawing) {
+        // Edge case - if mouseDown & instant mouseUp - nothing was drawn
+        if (currStepStartingIdx + 1 === undoSteps.length)
+          steps.pop();
+        else
+          clearRedo = true;
+        const firstSteps = undoSteps.slice(0, currStepStartingIdx || 1);
+        steps = [ ...firstSteps, undoSteps[undoSteps.length - 1]];
+        this.handleRedraw(steps);
+        this.setState({
+          isDrawing: false,
+          undoSteps: steps,
+          redoSteps: clearRedo ? [] : redoSteps,
+          currStepStartingIdx: 0,
+        });
+      }
     }
   };
+
+  canUndo = () => this.state.undoSteps.length > 0;
+  canRedo = () => this.state.redoSteps.length > 0;
 
   handleUndo = () => {
     const { undoSteps, redoSteps } = this.state;
@@ -303,7 +307,6 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     const { width, height } = this.canvasRef;
     const ratio = width / 1280.0;
     const ctx = this.ctx;
-    
     
     // ctx.clearRect(0, 0, width, height);
     this.loadImage(this.props.image, 1280, height / ratio).then(() => {
