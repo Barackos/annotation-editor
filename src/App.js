@@ -1,6 +1,6 @@
 import "./App.scss";
 import Painter from "./Painter";
-import { Button, Typography } from "@material-ui/core";
+import { Typography } from "@material-ui/core";
 import { useState } from "react";
 
 const images = [
