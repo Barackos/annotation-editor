@@ -14,7 +14,6 @@ import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import ProGalleryViewer from "./ProGalleryViewer";
 import "./Painter/Painter.scss";
 import "./App.scss";
-import PainterToolbar from "./Painter/Toolbar";
 import ReactPainter from "./Painter/ReactPainter";
 import ToolbarButtons from "./ToolbarButtons";
 
@@ -92,9 +91,10 @@ const images = [
 ].map((imgName) => "./images/" + imgName);
 
 const onPainterRender = (renderProps, state) => {
+  const { drawable } = state;
   const { canvas } = renderProps;
   return (
-    <div className="canvasContainer">
+    <div className="canvasContainer" style={{ cursor: drawable ? "crosshair" : "default" }}>
       <div class="canvas">{canvas}</div>
     </div>
   );
