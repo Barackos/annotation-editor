@@ -395,7 +395,6 @@ export class ReactPainter extends React.Component<
   };
 
   showAnnotation = () => {
-    debugger;
     const { cv } = window as any;
     let src = cv.imread("canvasInput");
     let dst = new cv.Mat();
@@ -462,6 +461,19 @@ export class ReactPainter extends React.Component<
     };
   };
 
+  setOptimalStrokeColor = () => {
+    const { cv } = window as any;
+    let src = cv.imread("canvasInput");
+    let mean = cv.mean(src);
+    const oppose = (scalar) => (scalar < 128 ? 255 : 0);
+    const { r, g, b } = {
+      r: oppose(mean[0]),
+      g: oppose(mean[1]),
+      b: oppose(mean[2]),
+    };
+    this.handleSetColor(`rgb(${r}, ${g}, ${b})`);
+  };
+
   loadImage = (image: string | File, width: number, height: number) =>
     importImage(image)
       .then(({ img, imgWidth, imgHeight }) => {
@@ -482,7 +494,9 @@ export class ReactPainter extends React.Component<
     const { width, height, image } = this.props;
     setUpForCanvas();
     if (image) {
-      this.loadImage(image, width, height);
+      this.loadImage(image, width, height).then(() =>
+        this.setOptimalStrokeColor()
+      );
     } else {
       this.initializeCanvas(width, height);
     }
