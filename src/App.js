@@ -83,12 +83,10 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const images = [
-  "pexels-david-savochka-192384.jpg",
-  "pexels-evg-culture-1170986.jpg",
-  "pexels-lina-kivaka-1741205.jpg",
-  "pexels-marko-blazevic-774731.jpg",
-  "pexels-mati-mango-4734723.jpg",
-  "pexels-александар-цветановић-1560424.jpg",
+  "02d8190f899602ed63f2192e0afe097c.jpg",
+  "438373-2.jpg",
+  "geometric-shapes-prism-art-black-line-prism-decorative-art-prints-for-living-room-wallpaper-prints.jpg",
+  "Shapes.jpg",
 ].map((imgName) => "./images/" + imgName);
 
 const onPainterRender = (renderProps, state) => {

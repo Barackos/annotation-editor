@@ -488,6 +488,13 @@ export class ReactPainter extends React.Component<
         this.initializeCanvas(width, height);
       });
 
+  keyPress: GlobalEventHandlers["onkeydown"] = (e) => {
+    if (e.key.toLowerCase() === "z" && (e.ctrlKey || e.metaKey)) {
+      if (e.shiftKey) this.handleRedo();
+      else this.handleUndo();
+    }
+  };
+
   componentDidMount() {
     const { width, height, image } = this.props;
     setUpForCanvas();
@@ -498,11 +505,13 @@ export class ReactPainter extends React.Component<
     } else {
       this.initializeCanvas(width, height);
     }
+    document.addEventListener("keydown", this.keyPress);
   }
 
   componentWillUnmount() {
     cleanUpCanvas();
     revokeUrl(this.state.imageDownloadUrl);
+    document.removeEventListener("keydown", this.keyPress);
   }
 
   render() {
