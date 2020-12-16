@@ -289,15 +289,13 @@ export class ReactPainter extends React.Component<
         // setTimeout(function () {
         //   setLoading(false);
         // }, 300);
-        this.handleRedraw(steps).then(() => {
-          this.setState({
-            isDrawing: false,
-            undoSteps: steps,
-            redoSteps: clearRedo ? [] : redoSteps,
-            currStepStartingIdx: 0,
-          });
-          setLoading(false);
+        this.setState({
+          isDrawing: false,
+          undoSteps: steps,
+          redoSteps: clearRedo ? [] : redoSteps,
+          currStepStartingIdx: 0,
         });
+        this.handleRedraw(steps).then(() => setLoading(false));
       }
     }
   };
@@ -463,9 +461,9 @@ export class ReactPainter extends React.Component<
 
   setOptimalStrokeColor = () => {
     const { cv } = window as any;
-    let src = cv.imread("canvasInput");
-    let mean = cv.mean(src);
-    const oppose = (scalar) => (scalar < 128 ? 255 : 0);
+    const src = cv.imread("canvasInput");
+    const mean = cv.mean(src);
+    const oppose = (scalar: number) => (scalar < 128 ? 255 : 0);
     const { r, g, b } = {
       r: oppose(mean[0]),
       g: oppose(mean[1]),
