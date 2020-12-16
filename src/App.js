@@ -144,6 +144,7 @@ function App() {
     canUndo: () => painterRef.current?.canUndo(),
     handleRedo: () => painterRef.current.handleRedo(),
     canRedo: () => painterRef.current?.canRedo(),
+    showAnnotation: () => painterRef.current?.showAnnotation(),
   };
   return (
     <div className="App">

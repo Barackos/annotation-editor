@@ -22,6 +22,7 @@ export default function ToolbarButtons({ painterState }) {
     handleRedo,
     handleSave,
     handleLoad,
+    showAnnotation,
     canUndo,
     canRedo,
     shouldAssist,
@@ -30,6 +31,10 @@ export default function ToolbarButtons({ painterState }) {
   const onFileChange = (e) => {
     if (e.target.files.length > 0) handleLoad(e.target.files[0]);
     document.getElementById("annotateLoader").value = "";
+  };
+  const toggleVisibility = () => {
+    showAnnotation();
+    setAssist(!shouldAssist);
   };
   return (
     <>
@@ -97,11 +102,7 @@ export default function ToolbarButtons({ painterState }) {
       </List>
       <Divider />
       <List>
-        <ListItem
-          button
-          key={"Visibility"}
-          onClick={() => setAssist(!shouldAssist)}
-        >
+        <ListItem button key={"Visibility"} onClick={toggleVisibility}>
           <ListItemIcon>
             {shouldAssist ? (
               <VisibilityOffIcon

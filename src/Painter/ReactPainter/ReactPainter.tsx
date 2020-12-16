@@ -394,6 +394,19 @@ export class ReactPainter extends React.Component<
     reader.onload = this.loadAnnotation;
   };
 
+  showAnnotation = () => {
+    debugger;
+    const { cv } = window as any;
+    let src = cv.imread("canvasInput");
+    let dst = new cv.Mat();
+    cv.cvtColor(src, src, cv.COLOR_RGB2GRAY, 0);
+    // You can try more different parameters
+    cv.Canny(src, dst, 50, 100, 3, false);
+    cv.imshow("canvasInput", dst);
+    src.delete();
+    dst.delete();
+  };
+
   handleSetColor = (color: string) => {
     this.setState({
       color,
@@ -483,7 +496,7 @@ export class ReactPainter extends React.Component<
   render() {
     const { render } = this.props;
     const { imageCanDownload, imageDownloadUrl } = this.state;
-    const canvasNode = <canvas {...this.getCanvasProps()} />;
+    const canvasNode = <canvas id="canvasInput" {...this.getCanvasProps()} />;
     return typeof render === "function"
       ? render({
           canvas: canvasNode,

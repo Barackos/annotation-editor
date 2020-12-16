@@ -28,6 +28,12 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script
+      async
+      src="https://docs.opencv.org/4.5.0/opencv.js"
+      onload="onOpenCvReady();"
+      type="text/javascript"
+    ></script>
     <div id="root"></div>
     <!--
       This HTML file is a template.
@@ -63,7 +69,7 @@
         storageBucket: "annotation-editor-bgu.appspot.com",
         messagingSenderId: "767873213011",
         appId: "1:767873213011:web:521e7c4a0d5cb849fadca6",
-        measurementId: "G-MV15CY2CVD"
+        measurementId: "G-MV15CY2CVD",
       };
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
