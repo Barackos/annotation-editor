@@ -369,7 +369,7 @@ export class ReactPainter extends React.Component<
     downloadObjectAsJson(undoSteps, "Annotation");
   };
 
-  loadAnnotation = (evt) => {
+  loadAnnotation: FileReader["onload"] = (evt) => {
     try {
       const obj = JSON.parse(evt.target.result.toString());
       if (!Array.isArray(obj)) throw Error("Not an array");

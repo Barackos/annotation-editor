@@ -97,7 +97,7 @@ const onPainterRender = (renderProps, state) => {
       className="canvasContainer"
       style={{ cursor: drawable ? "crosshair" : "default" }}
     >
-      <div class="canvas">{canvas}</div>
+      <div className="canvas">{canvas}</div>
     </div>
   );
 };
@@ -204,26 +204,32 @@ function App() {
           )}
           <main className={classes.content}>
             <div className={classes.toolbar} />
-            {showGallery ? (
-              <ProGalleryViewer
-                images={images.map((url) => ({ img: url }))}
-                onImageSelected={onImageSelected}
-              />
-            ) : (
-              <ReactPainter
-                key={imageUrl}
-                ref={painterRef}
-                width={1280}
-                isDrawable={drawable}
-                onSave={(blob) => console.log(blob)}
-                render={(renderProps) =>
-                  onPainterRender(renderProps, painterState)
-                }
-                setLoading={setLoading}
-                image={imageUrl}
-                initialLineJoin={"round"}
-              />
-            )}
+            <div
+              style={{
+                height: !showGallery ? "calc(100vh - 112px)" : undefined,
+              }}
+            >
+              {showGallery ? (
+                <ProGalleryViewer
+                  images={images.map((url) => ({ img: url }))}
+                  onImageSelected={onImageSelected}
+                />
+              ) : (
+                <ReactPainter
+                  key={imageUrl}
+                  ref={painterRef}
+                  width={1280}
+                  isDrawable={drawable}
+                  onSave={(blob) => console.log(blob)}
+                  render={(renderProps) =>
+                    onPainterRender(renderProps, painterState)
+                  }
+                  setLoading={setLoading}
+                  image={imageUrl}
+                  initialLineJoin={"round"}
+                />
+              )}
+            </div>
           </main>
         </div>
       </header>

@@ -4,7 +4,6 @@ import { ProGallery } from "pro-gallery";
 import "pro-gallery/dist/statics/main.css";
 
 export default function ProGalleryViewer({ images, onImageSelected }) {
-  // const classes = useStyles();
   const items = images.map((image, index) => ({
     itemId: "sample-" + index,
     mediaUrl: image.img,
@@ -20,7 +19,6 @@ export default function ProGalleryViewer({ images, onImageSelected }) {
 
   const container = {
     width: 1000,
-    height: 500,
   };
 
   const options = {
@@ -34,7 +32,7 @@ export default function ProGalleryViewer({ images, onImageSelected }) {
   };
 
   return (
-    <div style={{  backgroundColor: "#3d3e3f" }}>
+    <>
       <Typography gutterBottom variant="h3">
         Pick an Image:
       </Typography>
@@ -46,6 +44,6 @@ export default function ProGalleryViewer({ images, onImageSelected }) {
         scrollingElement={() => document.getElementById("gallery") || window}
         eventsListener={listener}
       />
-    </div>
+    </>
   );
 }
