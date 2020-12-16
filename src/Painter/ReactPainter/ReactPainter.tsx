@@ -366,12 +366,33 @@ export class ReactPainter extends React.Component<
       .catch((err) => console.error("in ReactPainter handleSaveBlob", err));
   };
 
-  handleSave = () => {
+  handleSaveAnnotation = () => {
     const { undoSteps } = this.state;
     downloadObjectAsJson(undoSteps, "Annotation");
   };
 
-  handleLoad = () => {};
+  loadAnnotation = (evt) => {
+    try {
+      const obj = JSON.parse(evt.target.result.toString());
+      if (!Array.isArray(obj)) throw Error("Not an array");
+      this.handleRedraw(obj).then(() => {
+        this.props.setLoading(false);
+        this.setState({
+          undoSteps: obj,
+          redoSteps: [],
+        });
+      });
+    } catch (ex) {
+      alert("File is not a proper annotation object: " + ex);
+    }
+  };
+
+  handleLoadAnnotation = (file: File) => {
+    this.props.setLoading(true);
+    var reader = new FileReader();
+    reader.readAsText(file, "UTF-8");
+    reader.onload = this.loadAnnotation;
+  };
 
   handleSetColor = (color: string) => {
     this.setState({

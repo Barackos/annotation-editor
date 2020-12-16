@@ -7,6 +7,7 @@ import CreateIcon from "@material-ui/icons/Create";
 import UndoIcon from "@material-ui/icons/Undo";
 import RedoIcon from "@material-ui/icons/Redo";
 import SaveIcon from "@material-ui/icons/Save";
+import PublishIcon from "@material-ui/icons/Publish";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 import PhotoSizeSelectActualIcon from "@material-ui/icons/PhotoSizeSelectActual";
@@ -20,11 +21,16 @@ export default function ToolbarButtons({ painterState }) {
     handleUndo,
     handleRedo,
     handleSave,
+    handleLoad,
     canUndo,
     canRedo,
     shouldAssist,
     setAssist,
   } = painterState;
+  const onFileChange = (e) => {
+    if (e.target.files.length > 0) handleLoad(e.target.files[0]);
+    document.getElementById("annotateLoader").value = "";
+  };
   return (
     <>
       <List>
@@ -68,6 +74,31 @@ export default function ToolbarButtons({ painterState }) {
       <List>
         <ListItem
           button
+          key={"Load"}
+          onClick={() => document.getElementById("annotateLoader").click()}
+        >
+          <ListItemIcon>
+            <PublishIcon fontSize="large" />
+          </ListItemIcon>
+          <ListItemText primary={"Load Annotation"} />
+          <input
+            id="annotateLoader"
+            type="file"
+            style={{ visibility: "hidden" }}
+            onChange={onFileChange}
+          />
+        </ListItem>
+        <ListItem button key={"Save"} onClick={handleSave}>
+          <ListItemIcon>
+            <SaveIcon fontSize="large" />
+          </ListItemIcon>
+          <ListItemText primary={"Save Annotation"} />
+        </ListItem>
+      </List>
+      <Divider />
+      <List>
+        <ListItem
+          button
           key={"Visibility"}
           onClick={() => setAssist(!shouldAssist)}
         >
@@ -85,12 +116,6 @@ export default function ToolbarButtons({ painterState }) {
             )}
           </ListItemIcon>
           <ListItemText primary={"Visibility"} />
-        </ListItem>
-        <ListItem button key={"Save"} onClick={handleSave}>
-          <ListItemIcon>
-            <SaveIcon fontSize="large" />
-          </ListItemIcon>
-          <ListItemText primary={"Save"} />
         </ListItem>
       </List>
       <Divider />
