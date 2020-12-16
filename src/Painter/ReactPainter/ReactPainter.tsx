@@ -1,19 +1,26 @@
-import * as PropTypes from 'prop-types';
-import * as React from 'react';
-import { canvasToBlob, composeFn, downloadObjectAsJson, fileToUrl, importImage, revokeUrl } from './util';
+import * as PropTypes from "prop-types";
+import * as React from "react";
+import {
+  canvasToBlob,
+  composeFn,
+  downloadObjectAsJson,
+  fileToUrl,
+  importImage,
+  revokeUrl,
+} from "./util";
 
 // disable touchAction, else the draw on canvas would not work
 // because window would scroll instead of draw on it
 const setUpForCanvas = () => {
-  document.body.style.touchAction = 'none';
+  document.body.style.touchAction = "none";
 };
 
 const cleanUpCanvas = () => {
   document.body.style.touchAction = null;
 };
 
-export type LineJoinType = 'round' | 'bevel' | 'miter';
-export type LineCapType = 'round' | 'butt' | 'square';
+export type LineJoinType = "round" | "bevel" | "miter";
+export type LineCapType = "round" | "butt" | "square";
 
 export interface CanvasProps {
   onMouseDown: React.MouseEventHandler<HTMLCanvasElement>;
@@ -57,6 +64,7 @@ export interface ReactPainterProps {
   onSave?: (blob: Blob) => void;
   image?: File | string;
   render?: (props: RenderProps) => JSX.Element;
+  setLoading?: (loading: boolean) => void;
 }
 interface DataStep {
   x: number;
@@ -78,7 +86,10 @@ export interface PainterState {
   currStepStartingIdx: number;
 }
 
-export class ReactPainter extends React.Component<ReactPainterProps, PainterState> {
+export class ReactPainter extends React.Component<
+  ReactPainterProps,
+  PainterState
+> {
   static propTypes = {
     color: PropTypes.string,
     height: PropTypes.number,
@@ -89,9 +100,14 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     onSave: PropTypes.func,
     render: PropTypes.func,
     width: PropTypes.number,
-    undoSteps: PropTypes.arrayOf(PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })),
-    redoSteps: PropTypes.arrayOf(PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })),
+    undoSteps: PropTypes.arrayOf(
+      PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })
+    ),
+    redoSteps: PropTypes.arrayOf(
+      PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })
+    ),
     currStepStartingIdx: PropTypes.number,
+    setLoading: PropTypes.func,
   };
 
   static defaultProps: Partial<ReactPainterProps> = {
@@ -100,11 +116,11 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     onSave() {
       // noop
     },
-    initialColor: '#000',
-    initialLineCap: 'round',
-    initialLineJoin: 'round',
+    initialColor: "#000",
+    initialLineCap: "round",
+    initialLineJoin: "round",
     initialLineWidth: 5,
-    width: 300
+    width: 300,
   };
 
   canvasRef: HTMLCanvasElement = null;
@@ -129,25 +145,33 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
   };
 
   extractOffSetFromEvent = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { offsetX, offsetY, touches, clientX: mouseClientX, clientY: mouseClientY } = e.nativeEvent as any;
+    const {
+      offsetX,
+      offsetY,
+      touches,
+      clientX: mouseClientX,
+      clientY: mouseClientY,
+    } = e.nativeEvent as any;
     // If offset coords are directly on the event we use them
     if (offsetX && offsetY) {
       return {
         offsetX: offsetX * this.scalingFactor,
-        offsetY: offsetY * this.scalingFactor
+        offsetY: offsetY * this.scalingFactor,
       };
     }
     // Otherwise we need to calculate them themselves
     // We need to check whether user is using a touch device or just the mouse and extract
     // the touch/click coords accordingly
-    const clientX = touches && touches.length ? touches[0].clientX : mouseClientX;
-    const clientY = touches && touches.length ? touches[0].clientY : mouseClientY;
+    const clientX =
+      touches && touches.length ? touches[0].clientX : mouseClientX;
+    const clientY =
+      touches && touches.length ? touches[0].clientY : mouseClientY;
     const rect = this.canvasRef.getBoundingClientRect();
     const x = (clientX - rect.left) * this.scalingFactor;
     const y = (clientY - rect.top) * this.scalingFactor;
     return {
       offsetX: x,
-      offsetY: y
+      offsetY: y,
     };
   };
 
@@ -168,7 +192,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       this.canvasRef.height = imgHeight;
       this.setState({
         canvasHeight: cvHeight,
-        canvasWidth: cvWidth
+        canvasWidth: cvWidth,
       });
       this.scalingFactor = 1 / scalingRatio;
     } else {
@@ -176,11 +200,11 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       this.canvasRef.height = height;
       this.setState({
         canvasHeight: height,
-        canvasWidth: width
+        canvasWidth: width,
       });
     }
     const { color, lineWidth, lineJoin, lineCap } = this.state;
-    this.ctx = this.canvasRef.getContext('2d');
+    this.ctx = this.canvasRef.getContext("2d");
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = lineWidth * this.scalingFactor;
     this.ctx.lineJoin = lineJoin;
@@ -201,13 +225,14 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
   };
 
   handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    if(this.props.isDrawable) {
+    if (this.props.isDrawable) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const { undoSteps } = this.state;
       this.lastX = offsetX;
       this.lastY = offsetY;
 
-      const currStepStartingIdx = undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
+      const currStepStartingIdx =
+        undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
       this.setState({
         isDrawing: true,
         currStepStartingIdx,
@@ -229,14 +254,14 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     ctx.stroke();
     this.lastX = newX;
     this.lastY = newY;
-    
+
     //Update undoSteps
     if (undoSteps.length === 0) {
       undoSteps.push({ x: lastX, y: lastY });
     }
     undoSteps.push({ x: newX, y: newY });
     this.setState({ undoSteps });
-  }
+  };
 
   handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { isDrawing } = this.state;
@@ -250,23 +275,28 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
 
   handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     const { isDrawing, undoSteps, redoSteps, currStepStartingIdx } = this.state;
-    if (this.props.isDrawable) {
+    const { setLoading, isDrawable } = this.props;
+    if (isDrawable) {
       let steps = undoSteps;
       let clearRedo = false;
       if (isDrawing) {
         // Edge case - if mouseDown & instant mouseUp - nothing was drawn
-        if (currStepStartingIdx + 1 === undoSteps.length)
-          steps.pop();
-        else
-          clearRedo = true;
+        if (currStepStartingIdx + 1 === undoSteps.length) steps.pop();
+        else clearRedo = true;
         const firstSteps = undoSteps.slice(0, currStepStartingIdx || 1);
-        steps = [ ...firstSteps, undoSteps[undoSteps.length - 1]];
-        this.handleRedraw(steps);
-        this.setState({
-          isDrawing: false,
-          undoSteps: steps,
-          redoSteps: clearRedo ? [] : redoSteps,
-          currStepStartingIdx: 0,
+        steps = [...firstSteps, undoSteps[undoSteps.length - 1]];
+        setLoading(true);
+        // setTimeout(function () {
+        //   setLoading(false);
+        // }, 300);
+        this.handleRedraw(steps).then(() => {
+          this.setState({
+            isDrawing: false,
+            undoSteps: steps,
+            redoSteps: clearRedo ? [] : redoSteps,
+            currStepStartingIdx: 0,
+          });
+          setLoading(false);
         });
       }
     }
@@ -279,21 +309,21 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     const { undoSteps, redoSteps } = this.state;
     if (undoSteps.length > 0) {
       redoSteps.push(undoSteps.pop());
-      if(undoSteps.length === 1)
-        redoSteps.push(undoSteps.pop());
+      if (undoSteps.length === 1) redoSteps.push(undoSteps.pop());
       this.handleRedraw(undoSteps);
     }
 
     this.setState({
       undoSteps,
     });
-  }
+  };
 
   handleRedo = () => {
     const { undoSteps, redoSteps } = this.state;
     if (redoSteps.length === 0) return;
 
-    const { x: prevX, y: prevY } = undoSteps.length > 0 ? undoSteps[undoSteps.length - 1] : redoSteps.pop();
+    const { x: prevX, y: prevY } =
+      undoSteps.length > 0 ? undoSteps[undoSteps.length - 1] : redoSteps.pop();
     const { x, y } = redoSteps.pop();
 
     this.draw(prevX, prevY, x, y);
@@ -301,37 +331,39 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     this.setState({
       redoSteps,
     });
-  }
+  };
 
-  handleRedraw = (undoSteps: DataStep[]) => {
+  handleRedraw = async (undoSteps: DataStep[]) => {
     const { width, height } = this.canvasRef;
     const ratio = width / 1280.0;
     const ctx = this.ctx;
-    
+
     // ctx.clearRect(0, 0, width, height);
-    this.loadImage(this.props.image, 1280, height / ratio).then(() => {
-      if(undoSteps.length === 0){return;}
+    return this.loadImage(this.props.image, 1280, height / ratio).then(() => {
+      if (undoSteps.length === 0) {
+        return;
+      }
       ctx.beginPath();
       const [firstStep, ...rest] = undoSteps;
       ctx.moveTo(firstStep.x, firstStep.y);
-  
-      rest.forEach(step => {
+
+      rest.forEach((step) => {
         ctx.lineTo(step.x, step.y);
-      })
+      });
       ctx.stroke();
     });
-  }
+  };
 
   handleSaveBlob = () => {
     const { onSave } = this.props;
-    canvasToBlob(this.canvasRef, 'image/png')
+    canvasToBlob(this.canvasRef, "image/png")
       .then((blob: Blob) => {
         onSave(blob);
         this.setState({
-          imageDownloadUrl: fileToUrl(blob)
+          imageDownloadUrl: fileToUrl(blob),
         });
       })
-      .catch(err => console.error('in ReactPainter handleSaveBlob', err));
+      .catch((err) => console.error("in ReactPainter handleSaveBlob", err));
   };
 
   handleSave = () => {
@@ -339,31 +371,29 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     downloadObjectAsJson(undoSteps, "Annotation");
   };
 
-  handleLoad = () => {
-    
-  };
+  handleLoad = () => {};
 
   handleSetColor = (color: string) => {
     this.setState({
-      color
+      color,
     });
   };
 
   handleSetLineWidth = (lineWidth: number) => {
     this.setState({
-      lineWidth
+      lineWidth,
     });
   };
 
-  handleSetLineJoin = (type: 'round' | 'bevel' | 'miter') => {
+  handleSetLineJoin = (type: "round" | "bevel" | "miter") => {
     this.setState({
-      lineJoin: type
+      lineJoin: type,
     });
   };
 
-  handleSetLineCap = (type: 'round' | 'butt' | 'square') => {
+  handleSetLineCap = (type: "round" | "butt" | "square") => {
     this.setState({
-      lineCap: type
+      lineCap: type,
     });
   };
 
@@ -392,24 +422,24 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
       style: {
         height: this.state.canvasHeight,
         width: this.state.canvasWidth,
-        ...style
+        ...style,
       },
-      ...restProps
+      ...restProps,
     };
   };
 
-  loadImage = (image: string | File, width: number, height: number) => 
+  loadImage = (image: string | File, width: number, height: number) =>
     importImage(image)
       .then(({ img, imgWidth, imgHeight }) => {
         this.initializeCanvas(width, height, imgWidth, imgHeight);
         this.ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
         this.setState({
-          imageCanDownload: true
+          imageCanDownload: true,
         });
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
-          imageCanDownload: false
+          imageCanDownload: false,
         });
         this.initializeCanvas(width, height);
       });
@@ -433,7 +463,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
     const { render } = this.props;
     const { imageCanDownload, imageDownloadUrl } = this.state;
     const canvasNode = <canvas {...this.getCanvasProps()} />;
-    return typeof render === 'function'
+    return typeof render === "function"
       ? render({
           canvas: canvasNode,
           getCanvasProps: this.getCanvasProps,
@@ -443,7 +473,7 @@ export class ReactPainter extends React.Component<ReactPainterProps, PainterStat
           setLineCap: this.handleSetLineCap,
           setLineJoin: this.handleSetLineJoin,
           setLineWidth: this.handleSetLineWidth,
-          triggerSave: this.handleSaveBlob
+          triggerSave: this.handleSaveBlob,
         })
       : canvasNode;
   }

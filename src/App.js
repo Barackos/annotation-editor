@@ -16,6 +16,7 @@ import "./Painter/Painter.scss";
 import "./App.scss";
 import ReactPainter from "./Painter/ReactPainter";
 import ToolbarButtons from "./ToolbarButtons";
+import LinearProgress from "@material-ui/core/LinearProgress";
 
 const drawerWidth = 240;
 
@@ -94,7 +95,10 @@ const onPainterRender = (renderProps, state) => {
   const { drawable } = state;
   const { canvas } = renderProps;
   return (
-    <div className="canvasContainer" style={{ cursor: drawable ? "crosshair" : "default" }}>
+    <div
+      className="canvasContainer"
+      style={{ cursor: drawable ? "crosshair" : "default" }}
+    >
       <div class="canvas">{canvas}</div>
     </div>
   );
@@ -104,6 +108,7 @@ function App() {
   const classes = useStyles();
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -168,6 +173,7 @@ function App() {
                 Polygon Annotation Editor
               </Typography>
             </Toolbar>
+            {loading && <LinearProgress />}
           </AppBar>
           {!showGallery && (
             <Drawer
@@ -213,6 +219,7 @@ function App() {
                 render={(renderProps) =>
                   onPainterRender(renderProps, painterState)
                 }
+                setLoading={setLoading}
                 image={imageUrl}
                 initialLineJoin={"round"}
               />
