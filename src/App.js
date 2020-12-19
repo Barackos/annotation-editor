@@ -125,6 +125,7 @@ function App() {
     const scriptTag = document.createElement("script");
     scriptTag.src = "./utils/opencv.js";
     scriptTag.onload = () => setOpenCvLoaded(true);
+    scriptTag.async = true;
     document.body.appendChild(scriptTag);
   }, []);
 
