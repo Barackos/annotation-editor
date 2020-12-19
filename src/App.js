@@ -153,6 +153,7 @@ function App() {
   const painterState = {
     drawable,
     setDrawable,
+    isOpenCvLoaded,
     uploadFn: openGallery,
     shouldAssist,
     setAssist,

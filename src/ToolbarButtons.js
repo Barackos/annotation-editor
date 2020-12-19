@@ -16,6 +16,7 @@ import Divider from "@material-ui/core/Divider";
 export default function ToolbarButtons({ painterState }) {
   const {
     drawable,
+    isOpenCvLoaded,
     setDrawable,
     uploadFn,
     handleUndo,
@@ -42,6 +43,7 @@ export default function ToolbarButtons({ painterState }) {
         <ListItem
           button
           selected={drawable}
+          disabled={!isOpenCvLoaded}
           key={"Draw"}
           onClick={() => setDrawable(!drawable)}
         >

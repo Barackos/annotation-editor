@@ -463,6 +463,7 @@ export class ReactPainter extends React.Component<
 
   setOptimalStrokeColor = () => {
     const { opencv } = this.props;
+    if (!opencv) return;
     const src = opencv.imread("canvasInput");
     const mean = opencv.mean(src);
     const oppose = (scalar: number) => (scalar < 128 ? 255 : 0);
@@ -518,7 +519,7 @@ export class ReactPainter extends React.Component<
 
   componentDidUpdate(prevProps: ReactPainterProps) {
     if (!prevProps.opencv && this.props.opencv) {
-      this.setOptimalStrokeColor();
+      setTimeout(() => this.setOptimalStrokeColor(), 300);
     }
   }
 
