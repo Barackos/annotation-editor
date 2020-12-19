@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
@@ -107,6 +107,22 @@ function App() {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = useState(false);
+  const [isOpenCvLoaded, setOpenCvLoaded] = useState(false);
+  const [opencv, setOpenCv] = useState(undefined);
+
+  useEffect(() => {
+    if (!isOpenCvLoaded) return;
+    ;
+    setOpenCv(window.cv)
+
+  }, [isOpenCvLoaded])
+
+  useEffect(() => {
+    const scriptTag = document.createElement('script');
+    scriptTag.src = './utils/opencv.js';
+    scriptTag.onload = () => setOpenCvLoaded(true);
+    document.body.appendChild(scriptTag);
+  }, [])
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -173,7 +189,7 @@ function App() {
                 Polygon Annotation Editor
               </Typography>
             </Toolbar>
-            {loading && <LinearProgress />}
+            {(loading || !isOpenCvLoaded) && <LinearProgress />}
           </AppBar>
           {!showGallery && (
             <Drawer
@@ -224,6 +240,7 @@ function App() {
                   render={(renderProps) =>
                     onPainterRender(renderProps, painterState)
                   }
+                  opencv={opencv}
                   setLoading={setLoading}
                   image={imageUrl}
                   initialLineJoin={"round"}

@@ -65,6 +65,7 @@ export interface ReactPainterProps {
   image?: File | string;
   render?: (props: RenderProps) => JSX.Element;
   setLoading?: (loading: boolean) => void;
+  opencv?: any;
 }
 interface DataStep {
   x: number;
@@ -108,6 +109,7 @@ export class ReactPainter extends React.Component<
     ),
     currStepStartingIdx: PropTypes.number,
     setLoading: PropTypes.func,
+    opencv: PropTypes.object,
   };
 
   static defaultProps: Partial<ReactPainterProps> = {
@@ -393,13 +395,13 @@ export class ReactPainter extends React.Component<
   };
 
   showAnnotation = () => {
-    const { cv } = window as any;
-    let src = cv.imread("canvasInput");
-    let dst = new cv.Mat();
-    cv.cvtColor(src, src, cv.COLOR_RGB2GRAY, 0);
+    const { opencv } = this.props;
+    let src = opencv.imread("canvasInput");
+    let dst = new opencv.Mat();
+    opencv.cvtColor(src, src, opencv.COLOR_RGB2GRAY, 0);
     // You can try more different parameters
-    cv.Canny(src, dst, 50, 100, 3, false);
-    cv.imshow("canvasInput", dst);
+    opencv.Canny(src, dst, 50, 100, 3, false);
+    opencv.imshow("canvasInput", dst);
     src.delete();
     dst.delete();
   };
@@ -460,9 +462,9 @@ export class ReactPainter extends React.Component<
   };
 
   setOptimalStrokeColor = () => {
-    const { cv } = window as any;
-    const src = cv.imread("canvasInput");
-    const mean = cv.mean(src);
+    const { opencv } = this.props;
+    const src = opencv.imread("canvasInput");
+    const mean = opencv.mean(src);
     const oppose = (scalar: number) => (scalar < 128 ? 255 : 0);
     const { r, g, b } = {
       r: oppose(mean[0]),
@@ -512,6 +514,12 @@ export class ReactPainter extends React.Component<
     cleanUpCanvas();
     revokeUrl(this.state.imageDownloadUrl);
     document.removeEventListener("keydown", this.keyPress);
+  }
+
+  componentDidUpdate(prevProps: ReactPainterProps) {
+    if (!prevProps.opencv && this.props.opencv) {
+      this.setOptimalStrokeColor();
+    }
   }
 
   render() {
