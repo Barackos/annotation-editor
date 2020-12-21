@@ -1,5 +1,6 @@
 import * as PropTypes from "prop-types";
 import * as React from "react";
+import { initialize, rgbToString } from "../../utils/analysis";
 import {
   canvasToBlob,
   composeFn,
@@ -41,13 +42,19 @@ export interface PropsGetterResult extends CanvasProps {
   [key: string]: any;
 }
 
+interface ColorRgb {
+  r: number;
+  g: number;
+  b: number;
+}
+
 export interface RenderProps {
   canvas: JSX.Element;
   triggerSave: () => void;
   getCanvasProps: (props: PropsGetterInput) => PropsGetterResult;
   imageCanDownload: boolean;
   imageDownloadUrl: string;
-  setColor: (color: string) => void;
+  setColor: (colorRgb: ColorRgb) => void;
   setLineWidth: (width: number) => void;
   setLineJoin: (type: LineJoinType) => void;
   setLineCap: (type: LineCapType) => void;
@@ -56,7 +63,7 @@ export interface RenderProps {
 export interface ReactPainterProps {
   height?: number;
   width?: number;
-  initialColor?: string;
+  initialColor?: ColorRgb;
   initialLineWidth?: number;
   initialLineJoin?: LineJoinType;
   initialLineCap?: LineCapType;
@@ -78,13 +85,14 @@ export interface PainterState {
   imageCanDownload: boolean;
   imageDownloadUrl: string;
   isDrawing: boolean;
-  color: string;
+  colorRgb: ColorRgb;
   lineWidth: number;
   lineJoin: LineJoinType;
   lineCap: LineCapType;
   undoSteps: DataStep[];
   redoSteps: DataStep[];
   currStepStartingIdx: number;
+  imgAnalyzer: any;
 }
 
 export class ReactPainter extends React.Component<
@@ -92,7 +100,7 @@ export class ReactPainter extends React.Component<
   PainterState
 > {
   static propTypes = {
-    color: PropTypes.string,
+    color: PropTypes.any,
     height: PropTypes.number,
     image: PropTypes.oneOfType([PropTypes.instanceOf(File), PropTypes.string]),
     lineCap: PropTypes.string,
@@ -118,7 +126,7 @@ export class ReactPainter extends React.Component<
     onSave() {
       // noop
     },
-    initialColor: "#000",
+    initialColor: { r: 0, g: 0, b: 0 },
     initialLineCap: "round",
     initialLineJoin: "round",
     initialLineWidth: 5,
@@ -134,7 +142,7 @@ export class ReactPainter extends React.Component<
   state: PainterState = {
     canvasHeight: 0,
     canvasWidth: 0,
-    color: this.props.initialColor,
+    colorRgb: this.props.initialColor,
     imageCanDownload: null,
     imageDownloadUrl: null,
     isDrawing: false,
@@ -144,6 +152,7 @@ export class ReactPainter extends React.Component<
     undoSteps: [],
     redoSteps: [],
     currStepStartingIdx: 0,
+    imgAnalyzer: undefined,
   };
 
   extractOffSetFromEvent = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
@@ -205,9 +214,9 @@ export class ReactPainter extends React.Component<
         canvasWidth: width,
       });
     }
-    const { color, lineWidth, lineJoin, lineCap } = this.state;
+    const { colorRgb, lineWidth, lineJoin, lineCap } = this.state;
     this.ctx = this.canvasRef.getContext("2d");
-    this.ctx.strokeStyle = color;
+    this.ctx.strokeStyle = rgbToString(colorRgb);
     this.ctx.lineWidth = lineWidth * this.scalingFactor;
     this.ctx.lineJoin = lineJoin;
     this.ctx.lineCap = lineCap;
@@ -243,9 +252,9 @@ export class ReactPainter extends React.Component<
   };
 
   draw = (lastX: number, lastY: number, newX: number, newY: number) => {
-    const { color, lineWidth, lineCap, lineJoin, undoSteps } = this.state;
+    const { colorRgb, lineWidth, lineCap, lineJoin, undoSteps } = this.state;
     const ctx = this.ctx;
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = rgbToString(colorRgb);
     ctx.lineWidth = lineWidth * this.scalingFactor;
     ctx.lineCap = lineCap;
     ctx.lineJoin = lineJoin;
@@ -407,101 +416,13 @@ export class ReactPainter extends React.Component<
     // src.delete();
     // dst.delete();
 
-    const { opencv: cv } = this.props;
-    let src = cv.imread("canvasInput");
-    let dst = src.clone();
-    cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
-    let ksize = new cv.Size(3, 3);
-    let anchor = new cv.Point(-1, -1);
-    // // You can try more different parameters
-    cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
-    // cv.bilateralFilter(src, dst, 9, 75, 75, cv.BORDER_DEFAULT);
-    cv.threshold(src, src, 190, 250, cv.THRESH_BINARY);
-    let contours = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    // You can try more different parameters
-    let poly = new cv.MatVector();
-    cv.findContours(
-      src,
-      contours,
-      hierarchy,
-      cv.RETR_CCOMP,
-      cv.CHAIN_APPROX_SIMPLE
-    );
-    // approximates each contour to polygon
-    for (let i = 0; i < contours.size(); ++i) {
-      let tmp = new cv.Mat();
-      let cnt = contours.get(i);
-      // if (cv.isContourConvex(cnt)) cv.convexHull(cnt, tmp, false, true);
-      cv.approxPolyDP(cnt, tmp, 3, true);
-      poly.push_back(tmp);
-      cnt.delete();
-      tmp.delete();
-    }
-
-    const points = {};
-    for (let i = 0; i < 1; ++i) {
-      const ci = contours.get(i);
-      points[i] = [];
-      for (let j = 0; j < ci.data32S.length; j += 2) {
-        let p: DataStep = {
-          x: ci.data32S[j],
-          y: ci.data32S[j + 1],
-        };
-        points[i].push(p);
-      }
-    }
-    // draw contours with random Scalar
-    for (let i = 0; i < poly.size(); ++i) {
-      let color = new cv.Scalar(
-        Math.round(Math.random() * 255),
-        Math.round(Math.random() * 255),
-        Math.round(Math.random() * 255)
-      );
-      // cv.drawContours(dst, poly, i, color, 1, cv.LINE_8, hierarchy, 100);
-    }
-    // ------
-    var corners = new cv.Mat();
-    var qualityLevel = 0.01;
-    var minDistance = 10;
-    var blockSize = 3;
-    var useHarrisDetector = true;
-    var k = 0.04;
-    var maxCorners = 60;
-
-    /// Apply corner detection
-    cv.goodFeaturesToTrack(
-      src,
-      corners,
-      maxCorners,
-      qualityLevel,
-      minDistance,
-      new cv.Mat(),
-      blockSize,
-      useHarrisDetector,
-      k
-    );
-
-    /// Draw corners detected
-    var r = 4;
-    for (var i = 0; i < corners.rows; i++) {
-      var x = corners.row(i).data32F[0];
-      var y = corners.row(i).data32F[1];
-      var color = new cv.Scalar(255, 0, 0, 1);
-      let center = new cv.Point(x, y);
-      cv.circle(dst, center, r, color, -1, 8, 0);
-    }
-    // ------
-    cv.imshow("canvasInput", dst);
-    src.delete();
-    dst.delete();
-    contours.delete();
-    hierarchy.delete();
+    const { imgAnalyzer } = this.state;
+    imgAnalyzer?.drawContours();
   };
 
-  handleSetColor = (color: string) => {
+  handleSetColor = (colorRgb: ColorRgb) => {
     this.setState({
-      color,
+      colorRgb,
     });
   };
 
@@ -565,7 +486,7 @@ export class ReactPainter extends React.Component<
       g: oppose(mean[1]),
       b: oppose(mean[2]),
     };
-    this.handleSetColor(`rgb(${r}, ${g}, ${b})`);
+    this.handleSetColor({ r, g, b });
   };
 
   loadImage = (image: string | File, width: number, height: number) =>
@@ -592,12 +513,17 @@ export class ReactPainter extends React.Component<
   };
 
   componentDidMount() {
-    const { width, height, image } = this.props;
+    const { width, height, image, opencv } = this.props;
     setUpForCanvas();
     if (image) {
-      this.loadImage(image, width, height).then(() =>
-        this.setOptimalStrokeColor()
-      );
+      this.loadImage(image, width, height).then(() => {
+        if (opencv) {
+          this.setState({
+            imgAnalyzer: initialize("canvasInput", opencv),
+          });
+        }
+        this.setOptimalStrokeColor();
+      });
     } else {
       this.initializeCanvas(width, height);
     }
@@ -608,10 +534,15 @@ export class ReactPainter extends React.Component<
     cleanUpCanvas();
     revokeUrl(this.state.imageDownloadUrl);
     document.removeEventListener("keydown", this.keyPress);
+    this.state.imgAnalyzer?.destroy();
   }
 
   componentDidUpdate(prevProps: ReactPainterProps) {
-    if (!prevProps.opencv && this.props.opencv) {
+    const { opencv } = this.props;
+    if (!prevProps.opencv && opencv) {
+      this.setState({
+        imgAnalyzer: initialize("canvasInput", opencv),
+      });
       setTimeout(() => this.setOptimalStrokeColor(), 300);
     }
   }
