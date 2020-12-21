@@ -13,7 +13,7 @@ export function initialize(ctxName: string, cv: any) {
   let src = cv.imread(ctxName);
   const contours = findContours(src.clone(), cv, hierarchy);
   const points = getPoints(contours);
-  const drawColor = new cv.Scalar(0, 255, 0);
+  const drawColor = new cv.Scalar(0, 255, 0, 1);
 
   return {
     drawContours: () =>
@@ -79,14 +79,27 @@ export function drawContours(
   src: any,
   contours: any,
   hierarchy: any,
-  drawColor: string
+  drawColor: any
 ) {
   // draw contours with random Scalar
   // "rgba(r, g, b, a)"
-  let dst = src.clone();
+  let contoursDst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC4);
   for (let i = 0; i < contours.size(); ++i) {
-    cv.drawContours(dst, contours, i, drawColor, 2, cv.LINE_8, hierarchy, 100);
+    cv.drawContours(
+      contoursDst,
+      contours,
+      i,
+      drawColor,
+      4,
+      cv.LINE_8,
+      hierarchy,
+      100
+    );
   }
+
+  let dst = new cv.Mat();
+  cv.addWeighted(src, 0.75, contoursDst, 1, 0, dst, -1);
+
   // ------
   // var corners = new cv.Mat();
   // var qualityLevel = 0.01;
