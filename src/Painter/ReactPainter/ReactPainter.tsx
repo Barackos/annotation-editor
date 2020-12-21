@@ -409,7 +409,7 @@ export class ReactPainter extends React.Component<
 
     const { opencv: cv } = this.props;
     let src = cv.imread("canvasInput");
-    let dst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC3);
+    let dst = src.clone();
     cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
     let ksize = new cv.Size(3, 3);
     let anchor = new cv.Point(-1, -1);
@@ -451,8 +451,6 @@ export class ReactPainter extends React.Component<
         points[i].push(p);
       }
     }
-    console.log(points);
-    //plotPoints(canvasOutput, points)
     // draw contours with random Scalar
     for (let i = 0; i < poly.size(); ++i) {
       let color = new cv.Scalar(
@@ -460,8 +458,40 @@ export class ReactPainter extends React.Component<
         Math.round(Math.random() * 255),
         Math.round(Math.random() * 255)
       );
-      cv.drawContours(dst, poly, i, color, 1, cv.LINE_8, hierarchy, 100);
+      // cv.drawContours(dst, poly, i, color, 1, cv.LINE_8, hierarchy, 100);
     }
+    // ------
+    var corners = new cv.Mat();
+    var qualityLevel = 0.01;
+    var minDistance = 10;
+    var blockSize = 3;
+    var useHarrisDetector = true;
+    var k = 0.04;
+    var maxCorners = 60;
+
+    /// Apply corner detection
+    cv.goodFeaturesToTrack(
+      src,
+      corners,
+      maxCorners,
+      qualityLevel,
+      minDistance,
+      new cv.Mat(),
+      blockSize,
+      useHarrisDetector,
+      k
+    );
+
+    /// Draw corners detected
+    var r = 4;
+    for (var i = 0; i < corners.rows; i++) {
+      var x = corners.row(i).data32F[0];
+      var y = corners.row(i).data32F[1];
+      var color = new cv.Scalar(255, 0, 0, 1);
+      let center = new cv.Point(x, y);
+      cv.circle(dst, center, r, color, -1, 8, 0);
+    }
+    // ------
     cv.imshow("canvasInput", dst);
     src.delete();
     dst.delete();
