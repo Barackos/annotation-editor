@@ -395,15 +395,78 @@ export class ReactPainter extends React.Component<
   };
 
   showAnnotation = () => {
-    const { opencv } = this.props;
-    let src = opencv.imread("canvasInput");
-    let dst = new opencv.Mat();
-    opencv.cvtColor(src, src, opencv.COLOR_RGB2GRAY, 0);
+    // let dst = new opencv.Mat();
+    // opencv.cvtColor(src, src, opencv.COLOR_RGB2GRAY, 0);
+    // let ksize = new opencv.Size(3, 3);
+    // let anchor = new opencv.Point(-1, -1);
+    // // You can try more different parameters
+    // opencv.blur(src, src, ksize, anchor, opencv.BORDER_DEFAULT);
+    // opencv.threshold(src, sr, 177, 200, opencv.THRESH_BINARY);
+    // opencv.Canny(src, dst, 50, 100, 3, false);
+    // opencv.imshow("canvasInput", dst);
+    // src.delete();
+    // dst.delete();
+
+    const { opencv: cv } = this.props;
+    let src = cv.imread("canvasInput");
+    let dst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC3);
+    cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
+    let ksize = new cv.Size(3, 3);
+    let anchor = new cv.Point(-1, -1);
+    // // You can try more different parameters
+    cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
+    // cv.bilateralFilter(src, dst, 9, 75, 75, cv.BORDER_DEFAULT);
+    cv.threshold(src, src, 190, 250, cv.THRESH_BINARY);
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
     // You can try more different parameters
-    opencv.Canny(src, dst, 50, 100, 3, false);
-    opencv.imshow("canvasInput", dst);
+    let poly = new cv.MatVector();
+    cv.findContours(
+      src,
+      contours,
+      hierarchy,
+      cv.RETR_CCOMP,
+      cv.CHAIN_APPROX_SIMPLE
+    );
+    // approximates each contour to polygon
+    for (let i = 0; i < contours.size(); ++i) {
+      let tmp = new cv.Mat();
+      let cnt = contours.get(i);
+      // if (cv.isContourConvex(cnt)) cv.convexHull(cnt, tmp, false, true);
+      cv.approxPolyDP(cnt, tmp, 3, true);
+      poly.push_back(tmp);
+      cnt.delete();
+      tmp.delete();
+    }
+
+    const points = {};
+    for (let i = 0; i < 1; ++i) {
+      const ci = contours.get(i);
+      points[i] = [];
+      for (let j = 0; j < ci.data32S.length; j += 2) {
+        let p: DataStep = {
+          x: ci.data32S[j],
+          y: ci.data32S[j + 1],
+        };
+        points[i].push(p);
+      }
+    }
+    console.log(points);
+    //plotPoints(canvasOutput, points)
+    // draw contours with random Scalar
+    for (let i = 0; i < poly.size(); ++i) {
+      let color = new cv.Scalar(
+        Math.round(Math.random() * 255),
+        Math.round(Math.random() * 255),
+        Math.round(Math.random() * 255)
+      );
+      cv.drawContours(dst, poly, i, color, 1, cv.LINE_8, hierarchy, 100);
+    }
+    cv.imshow("canvasInput", dst);
     src.delete();
     dst.delete();
+    contours.delete();
+    hierarchy.delete();
   };
 
   handleSetColor = (color: string) => {
