@@ -13,7 +13,7 @@ import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import "./App.scss";
 import ReactPainter from "../Painter/ReactPainter";
-import ToolbarButtons from "../ToolbarButtons";
+import ToolbarButtons from "../Painter/ToolbarButtons";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import OpenCvSnack from "../OpenCvSnack";
 import loadOpenCv from "../utils/loadOpenCv";

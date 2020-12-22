@@ -13,7 +13,7 @@ import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 import PhotoSizeSelectActualIcon from "@material-ui/icons/PhotoSizeSelectActual";
 import Divider from "@material-ui/core/Divider";
 
-export default function ToolbarButtons({ painterState }) {
+function ToolbarButtons({ painterState }) {
   const {
     drawable,
     isOpenCvLoaded,
@@ -133,3 +133,5 @@ export default function ToolbarButtons({ painterState }) {
     </>
   );
 }
+
+export default ToolbarButtons;
