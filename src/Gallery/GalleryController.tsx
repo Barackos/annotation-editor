@@ -4,7 +4,7 @@ import GalleryViewer from "./GalleryViewer";
 import GalleryViewerFallback from "./GalleryViewerFallback";
 
 interface GalleryProps {
-  onImageSelected?: (image: string | File) => void;
+  onImageSelected?: (image: File | Blob | string) => void;
 }
 
 const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {
@@ -20,6 +20,9 @@ const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {
 
   useEffect(() => {
     fetchImages().then(setImages);
+  }, []);
+
+  useEffect(() => {
     window.addEventListener("scroll", scrollListener);
     return () => window.removeEventListener("scroll", scrollListener);
   }, [scrollListener]);
