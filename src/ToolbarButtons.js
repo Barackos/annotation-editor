@@ -18,7 +18,7 @@ export default function ToolbarButtons({ painterState }) {
     drawable,
     isOpenCvLoaded,
     setDrawable,
-    uploadFn,
+    pickNewImg,
     handleUndo,
     handleRedo,
     handleSave,
@@ -123,7 +123,7 @@ export default function ToolbarButtons({ painterState }) {
       </List>
       <Divider />
       <List>
-        <ListItem button key={"PickNewImage"} onClick={uploadFn}>
+        <ListItem button key={"PickNewImage"} onClick={pickNewImg}>
           <ListItemIcon>
             <PhotoSizeSelectActualIcon fontSize="large" />
           </ListItemIcon>

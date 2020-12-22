@@ -144,7 +144,7 @@ function App() {
     drawable,
     setDrawable,
     isOpenCvLoaded: !!opencv,
-    uploadFn: openGallery,
+    pickNewImg: openGallery,
     shouldAssist,
     setAssist,
     handleSave: () => painterRef.current.handleSaveAnnotation(),
@@ -233,7 +233,7 @@ function App() {
                 <ReactPainter
                   key={image}
                   ref={painterRef}
-                  width={1280}
+                  width={window.innerWidth - 120}
                   isDrawable={drawable}
                   onSave={(blob) => console.log(blob)}
                   render={(renderProps) =>
