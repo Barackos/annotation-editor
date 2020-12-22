@@ -5,14 +5,15 @@ const Row = () => (
     style={{
       display: "flex",
       flexDirection: "row",
-      justifyContent: "space-evenly",
+      justifyContent: "space-between",
       // width: "calc(100vw - 48px)",
       width: "1000px",
       marginBottom: "64px",
     }}
   >
-    <Skeleton variant="rect" animation="wave" width={300} height={200} />
-    <Skeleton variant="rect" animation="wave" width={300} height={200} />
+    <Skeleton variant="rect" animation="wave" width={250} height={200} />
+    <Skeleton variant="rect" animation="wave" width={250} height={200} />
+    <Skeleton variant="rect" animation="wave" width={250} height={200} />
   </div>
 );
 

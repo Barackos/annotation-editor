@@ -11,14 +11,14 @@ import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
-import "./Painter/Painter.scss";
+import "../Painter/Painter.scss";
 import "./App.scss";
-import ReactPainter from "./Painter/ReactPainter";
-import ToolbarButtons from "./ToolbarButtons";
+import ReactPainter from "../Painter/ReactPainter";
+import ToolbarButtons from "../ToolbarButtons";
 import LinearProgress from "@material-ui/core/LinearProgress";
-import OpenCvSnack from "./OpenCvSnack";
-import loadOpenCv from "./utils/loadOpenCv";
-import GalleryViewerFallback from "./GalleryViewer/GalleryViewerFallback";
+import OpenCvSnack from "../OpenCvSnack";
+import loadOpenCv from "../utils/loadOpenCv";
+import GalleryViewerFallback from "../GalleryViewer/GalleryViewerFallback";
 
 const drawerWidth = 240;
 
@@ -92,7 +92,7 @@ const images = [
 ].map((imgName) => "./images/" + imgName);
 
 const GalleryViewer = React.lazy(() =>
-  import(/* webpackChunkName: "GalleryViewer" */ `./GalleryViewer`)
+  import(/* webpackChunkName: "GalleryViewer" */ `../GalleryViewer`)
 );
 
 const onPainterRender = (renderProps, state) => {
