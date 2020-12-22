@@ -11,6 +11,9 @@
 # production
 /build
 
+# development
+/public/images/dataset
+
 # misc
 .DS_Store
 .env.local

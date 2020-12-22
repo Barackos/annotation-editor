@@ -2,9 +2,9 @@ import { ProGallery } from "pro-gallery";
 import "pro-gallery/dist/statics/main.css";
 
 export default function GalleryViewer({ images, onImageSelected }) {
-  const items = images.map((image, index) => ({
+  const items = images.map((url, index) => ({
     itemId: "sample-" + index,
-    mediaUrl: image.img,
+    mediaUrl: url,
     metaData: {
       type: "image",
       width: 200,
@@ -16,7 +16,7 @@ export default function GalleryViewer({ images, onImageSelected }) {
   }));
 
   const container = {
-    width: 1000,
+    width: window.innerWidth - 118,
   };
 
   const options = {

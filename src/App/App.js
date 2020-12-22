@@ -18,7 +18,7 @@ import ToolbarButtons from "../ToolbarButtons";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import OpenCvSnack from "../OpenCvSnack";
 import loadOpenCv from "../utils/loadOpenCv";
-import GalleryViewerFallback from "../GalleryViewer/GalleryViewerFallback";
+import { GalleryFallback } from "../Gallery";
 
 const drawerWidth = 240;
 
@@ -91,8 +91,8 @@ const images = [
   "Shapes.jpg",
 ].map((imgName) => "./images/" + imgName);
 
-const GalleryViewer = React.lazy(() =>
-  import(/* webpackChunkName: "GalleryViewer" */ `../GalleryViewer`)
+const Gallery = React.lazy(() =>
+  import(/* webpackChunkName: "Gallery" */ `../Gallery`)
 );
 
 const onPainterRender = (renderProps, state) => {
@@ -235,8 +235,8 @@ function App() {
                   <Typography gutterBottom variant="h3">
                     Pick an Image:
                   </Typography>
-                  <Suspense fallback={<GalleryViewerFallback />}>
-                    <GalleryViewer
+                  <Suspense fallback={<GalleryFallback />}>
+                    <Gallery
                       images={images.map((url) => ({ img: url }))}
                       onImageSelected={onImageSelected}
                     />
