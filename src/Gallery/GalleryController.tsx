@@ -4,7 +4,7 @@ import GalleryViewer from "./GalleryViewer";
 import GalleryViewerFallback from "./GalleryViewerFallback";
 
 interface GalleryProps {
-  onImageSelected?: (url: string) => void;
+  onImageSelected?: (image: string | File) => void;
 }
 
 interface GalleryState {
@@ -14,7 +14,7 @@ interface GalleryState {
 
 class Gallery extends React.Component<GalleryProps, GalleryState> {
   static defaultProps: Partial<GalleryProps> = {
-    onImageSelected: (url) => console.log("Image Selected", url),
+    onImageSelected: (image) => console.log("Image Selected", image),
   };
 
   state: GalleryState = {

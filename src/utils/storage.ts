@@ -7,9 +7,10 @@ const localUrl = (imageName: string) => `images/dataset/${imageName}`;
 const remoteUrl = (imageName: string) =>
   `https://firebasestorage.googleapis.com/v0/b/annotation-editor-bgu.appspot.com/o/images%2F${imageName}?alt=media`;
 
-export const fetchImages = () => {
-  const storage: firebaseTypes.storage.Storage = (window as any).storage;
-  return storage
+const storage: firebaseTypes.storage.Storage = (window as any).storage;
+
+export const fetchImages = () =>
+  storage
     .ref("images")
     .listAll()
     .then(
@@ -23,4 +24,3 @@ export const fetchImages = () => {
         return [];
       }
     );
-};

@@ -28,7 +28,10 @@ export default function GalleryViewer({ images, onImageSelected }) {
     // console.log({ eName, eData });
     switch (eName) {
       case "ITEM_CLICKED":
-        onImageSelected(eData.url);
+        fetch(eData.url).then(async (value) => {
+          const x = await value.blob();
+          onImageSelected(x);
+        });
         break;
       default:
         break;

@@ -76,7 +76,7 @@ export interface ImportImageResponse {
 }
 
 export const importImage = (
-  image: string | File
+  image: File | Blob | string
 ): Promise<ImportImageResponse> =>
   new Promise((resolve, reject) => {
     if (typeof image === "string") {

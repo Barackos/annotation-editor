@@ -136,14 +136,14 @@ function App() {
     setOpen(false);
   };
 
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState(undefined);
   const [showGallery, setGalleryShown] = useState(true);
   const openGallery = () => {
     setImageUrl(images[Math.floor(Math.random() * 3)]);
     setGalleryShown(!showGallery);
   };
-  const onImageSelected = (url) => {
-    setImageUrl(url);
+  const onImageSelected = (image) => {
+    setImageUrl(image);
     setGalleryShown(false);
   };
 

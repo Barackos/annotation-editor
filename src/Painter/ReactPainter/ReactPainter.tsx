@@ -65,7 +65,7 @@ export interface ReactPainterProps {
   initialLineCap?: LineCapType;
   isDrawable?: boolean;
   onSave?: (blob: Blob) => void;
-  image?: File | string;
+  image?: File | Blob | string;
   render?: (props: RenderProps) => JSX.Element;
   setLoading?: (loading: boolean) => void;
 }
@@ -97,7 +97,11 @@ export class ReactPainter extends React.Component<
   static propTypes = {
     color: PropTypes.any,
     height: PropTypes.number,
-    image: PropTypes.oneOfType([PropTypes.instanceOf(File), PropTypes.string]),
+    image: PropTypes.oneOfType([
+      PropTypes.instanceOf(File),
+      PropTypes.instanceOf(Blob),
+      PropTypes.string,
+    ]),
     lineCap: PropTypes.string,
     lineJoin: PropTypes.string,
     lineWidth: PropTypes.number,
@@ -465,7 +469,7 @@ export class ReactPainter extends React.Component<
     };
   };
 
-  loadImage = (image: string | File, width: number, height: number) =>
+  loadImage = (image: File | Blob | string, width: number, height: number) =>
     importImage(image)
       .then(({ img, imgWidth, imgHeight }) => {
         this.initializeCanvas(width, height, imgWidth, imgHeight);
