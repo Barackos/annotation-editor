@@ -26,7 +26,13 @@ export default function GalleryViewer({ images, onImageSelected }) {
 
   const listener = (eName, eData) => {
     // console.log({ eName, eData });
-    if (eName === "ITEM_CLICKED") onImageSelected(eData.url);
+    switch (eName) {
+      case "ITEM_CLICKED":
+        onImageSelected(eData.url);
+        break;
+      default:
+        break;
+    }
   };
 
   return (

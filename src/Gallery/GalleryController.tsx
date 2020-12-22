@@ -11,13 +11,14 @@ interface GalleryProps {
 
 interface GalleryState {
   images: string[];
+  maxToShow: number;
 }
 
-const remoteUrl = (imageName: string) =>
-  `https://firebasestorage.googleapis.com/v0/b/annotation-editor-bgu.appspot.com/o/images%2F${imageName}?alt=media`;
-const localUrl = (imageName: string) => `images/dataset/${imageName}`;
 const imgUrl = (imageName: string) =>
   isDevMode() ? localUrl(imageName) : remoteUrl(imageName);
+const localUrl = (imageName: string) => `images/dataset/${imageName}`;
+const remoteUrl = (imageName: string) =>
+  `https://firebasestorage.googleapis.com/v0/b/annotation-editor-bgu.appspot.com/o/images%2F${imageName}?alt=media`;
 
 class Gallery extends React.Component<GalleryProps, GalleryState> {
   static defaultProps: Partial<GalleryProps> = {
@@ -26,9 +27,10 @@ class Gallery extends React.Component<GalleryProps, GalleryState> {
 
   state: GalleryState = {
     images: [],
+    maxToShow: 20,
   };
 
-  componentDidMount() {
+  fetchImages = () => {
     const storage: firebase.storage.Storage = (window as any).storage;
     storage
       .ref("images")
@@ -41,14 +43,33 @@ class Gallery extends React.Component<GalleryProps, GalleryState> {
         },
         (rejectReason) => console.log(rejectReason)
       );
+  };
+
+  scrollListener = () => {
+    const { innerHeight, scrollY } = window;
+    if (innerHeight + scrollY >= document.body.offsetHeight - 200) {
+      this.needMoreImages();
+    }
+  };
+
+  componentDidMount() {
+    this.fetchImages();
+    window.addEventListener("scroll", this.scrollListener);
   }
+
+  componentWillUnmount() {
+    window.removeEventListener("scroll", this.scrollListener);
+  }
+
+  needMoreImages = () =>
+    this.setState({ maxToShow: this.state.maxToShow + 20 });
 
   render() {
     const { onImageSelected } = this.props;
-    const { images } = this.state;
+    const { images, maxToShow } = this.state;
     return images.length ? (
       <GalleryViewer
-        images={images.slice(0, 20)}
+        images={images.slice(0, maxToShow)}
         onImageSelected={onImageSelected}
       />
     ) : (
