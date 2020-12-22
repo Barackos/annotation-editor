@@ -1,8 +1,8 @@
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import { initialize, rgbToString } from "../../utils/analysis";
-import loadOpenCv, { removeLoadListener } from "../../utils/loadOpenCv";
-import { ColorRgb, ColorSetter } from "../../utils/types";
+import { initialize, rgbToString } from "../utils/analysis";
+import loadOpenCv, { removeLoadListener } from "../utils/loadOpenCv";
+import { ColorRgb, ColorSetter } from "../utils/types";
 import {
   canvasToBlob,
   composeFn,
