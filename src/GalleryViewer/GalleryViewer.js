@@ -1,9 +1,7 @@
-import React from "react";
-import { Typography } from "@material-ui/core";
 import { ProGallery } from "pro-gallery";
 import "pro-gallery/dist/statics/main.css";
 
-export default function ProGalleryViewer({ images, onImageSelected }) {
+export default function GalleryViewer({ images, onImageSelected }) {
   const items = images.map((image, index) => ({
     itemId: "sample-" + index,
     mediaUrl: image.img,
@@ -32,18 +30,13 @@ export default function ProGalleryViewer({ images, onImageSelected }) {
   };
 
   return (
-    <>
-      <Typography gutterBottom variant="h3">
-        Pick an Image:
-      </Typography>
-      <ProGallery
-        domId={"asd"}
-        items={items}
-        options={options}
-        container={container}
-        scrollingElement={() => document.getElementById("gallery") || window}
-        eventsListener={listener}
-      />
-    </>
+    <ProGallery
+      domId={"asd"}
+      items={items}
+      options={options}
+      container={container}
+      scrollingElement={() => document.getElementById("gallery") || window}
+      eventsListener={listener}
+    />
   );
 }

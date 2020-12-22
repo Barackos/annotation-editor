@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import clsx from "clsx";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
@@ -11,7 +11,6 @@ import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
-import ProGalleryViewer from "./ProGalleryViewer";
 import "./Painter/Painter.scss";
 import "./App.scss";
 import ReactPainter from "./Painter/ReactPainter";
@@ -19,6 +18,7 @@ import ToolbarButtons from "./ToolbarButtons";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import OpenCvSnack from "./OpenCvSnack";
 import loadOpenCv from "./utils/loadOpenCv";
+import GalleryViewerFallback from "./GalleryViewer/GalleryViewerFallback";
 
 const drawerWidth = 240;
 
@@ -90,6 +90,10 @@ const images = [
   "geometric-shapes-prism-art-black-line-prism-decorative-art-prints-for-living-room-wallpaper-prints.jpg",
   "Shapes.jpg",
 ].map((imgName) => "./images/" + imgName);
+
+const GalleryViewer = React.lazy(() =>
+  import(/* webpackChunkName: "GalleryViewer" */ `./GalleryViewer`)
+);
 
 const onPainterRender = (renderProps, state) => {
   const { drawable } = state;
@@ -227,10 +231,17 @@ function App() {
               }}
             >
               {showGallery ? (
-                <ProGalleryViewer
-                  images={images.map((url) => ({ img: url }))}
-                  onImageSelected={onImageSelected}
-                />
+                <>
+                  <Typography gutterBottom variant="h3">
+                    Pick an Image:
+                  </Typography>
+                  <Suspense fallback={<GalleryViewerFallback />}>
+                    <GalleryViewer
+                      images={images.map((url) => ({ img: url }))}
+                      onImageSelected={onImageSelected}
+                    />
+                  </Suspense>
+                </>
               ) : (
                 <ReactPainter
                   key={imageUrl}
