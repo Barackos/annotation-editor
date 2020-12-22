@@ -1,19 +1,18 @@
-interface Point {
-  x: number;
-  y: number;
-}
+import { ColorRgb, ColorSetter, Point } from "./types";
 
-export function rgbToString(colorRgb: any) {
+export function rgbToString(colorRgb: ColorRgb) {
   const { r, g, b } = colorRgb;
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-export function initialize(ctxName: string, cv: any) {
+export function initialize(ctxName: string, cv: any, colorSetter: ColorSetter) {
   let hierarchy = new cv.Mat();
   let src = cv.imread(ctxName);
   const contours = findContours(src.clone(), cv, hierarchy);
   const points = getPoints(contours);
   const drawColor = new cv.Scalar(0, 255, 0, 1);
+
+  setOptimalStrokeColor(cv, colorSetter);
 
   return {
     drawContours: () =>
@@ -24,6 +23,17 @@ export function initialize(ctxName: string, cv: any) {
       hierarchy.delete();
     },
   };
+}
+
+function setOptimalStrokeColor(cv: any, colorSetter: ColorSetter) {
+  const src = cv.imread("canvasInput");
+  const mean = cv.mean(src);
+  const oppose = (scalar: number) => (scalar < 128 ? 255 : 0);
+  colorSetter({
+    r: oppose(mean[0]),
+    g: oppose(mean[1]),
+    b: oppose(mean[2]),
+  });
 }
 
 function getPoints(contours: any) {

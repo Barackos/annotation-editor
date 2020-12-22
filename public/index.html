@@ -26,15 +26,22 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>Annotation Editor</title>
+    <script type="text/javascript">
+      isOpenCvLoaded = false;
+      const setLoaded = () => (isOpenCvLoaded = true);
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <!-- <script
-      async
-      src="https://docs.opencv.org/4.5.0/opencv.js"
-      type="text/javascript"
-    ></script> -->
+    <!-- src="https://docs.opencv.org/4.5.0/opencv.js" -->
     <!-- onload="onOpenCvReady();" -->
+    <script
+      async
+      src="./utils/opencv.js"
+      type="text/javascript"
+      id="scriptOpenCv"
+      onload="setLoaded()"
+    ></script>
     <div id="root"></div>
     <!--
       This HTML file is a template.
@@ -56,8 +63,14 @@
     <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-analytics.js"></script>
 
     <!-- Add Firebase products that you want to use -->
-    <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-firestore.js"></script>
+    <script
+      async
+      src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"
+    ></script>
+    <script
+      async
+      src="https://www.gstatic.com/firebasejs/8.1.2/firebase-firestore.js"
+    ></script>
 
     <script>
       // Your web app's Firebase configuration

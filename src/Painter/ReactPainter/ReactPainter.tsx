@@ -1,6 +1,8 @@
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { initialize, rgbToString } from "../../utils/analysis";
+import loadOpenCv, { removeLoadListener } from "../../utils/loadOpenCv";
+import { ColorRgb, ColorSetter } from "../../utils/types";
 import {
   canvasToBlob,
   composeFn,
@@ -42,12 +44,6 @@ export interface PropsGetterResult extends CanvasProps {
   [key: string]: any;
 }
 
-interface ColorRgb {
-  r: number;
-  g: number;
-  b: number;
-}
-
 export interface RenderProps {
   canvas: JSX.Element;
   triggerSave: () => void;
@@ -72,7 +68,6 @@ export interface ReactPainterProps {
   image?: File | string;
   render?: (props: RenderProps) => JSX.Element;
   setLoading?: (loading: boolean) => void;
-  opencv?: any;
 }
 interface DataStep {
   x: number;
@@ -117,7 +112,6 @@ export class ReactPainter extends React.Component<
     ),
     currStepStartingIdx: PropTypes.number,
     setLoading: PropTypes.func,
-    opencv: PropTypes.object,
   };
 
   static defaultProps: Partial<ReactPainterProps> = {
@@ -420,29 +414,25 @@ export class ReactPainter extends React.Component<
     imgAnalyzer?.drawContours();
   };
 
-  handleSetColor = (colorRgb: ColorRgb) => {
+  handleSetColor: ColorSetter = async (colorRgb) =>
     this.setState({
       colorRgb,
     });
-  };
 
-  handleSetLineWidth = (lineWidth: number) => {
+  handleSetLineWidth = (lineWidth: number) =>
     this.setState({
       lineWidth,
     });
-  };
 
-  handleSetLineJoin = (type: "round" | "bevel" | "miter") => {
+  handleSetLineJoin = (type: "round" | "bevel" | "miter") =>
     this.setState({
       lineJoin: type,
     });
-  };
 
-  handleSetLineCap = (type: "round" | "butt" | "square") => {
+  handleSetLineCap = (type: "round" | "butt" | "square") =>
     this.setState({
       lineCap: type,
     });
-  };
 
   getCanvasProps = (props: PropsGetterInput = {}): PropsGetterResult => {
     const {
@@ -475,20 +465,6 @@ export class ReactPainter extends React.Component<
     };
   };
 
-  setOptimalStrokeColor = () => {
-    const { opencv } = this.props;
-    if (!opencv) return;
-    const src = opencv.imread("canvasInput");
-    const mean = opencv.mean(src);
-    const oppose = (scalar: number) => (scalar < 128 ? 255 : 0);
-    const { r, g, b } = {
-      r: oppose(mean[0]),
-      g: oppose(mean[1]),
-      b: oppose(mean[2]),
-    };
-    this.handleSetColor({ r, g, b });
-  };
-
   loadImage = (image: string | File, width: number, height: number) =>
     importImage(image)
       .then(({ img, imgWidth, imgHeight }) => {
@@ -512,17 +488,24 @@ export class ReactPainter extends React.Component<
     }
   };
 
+  initImageAnalyser = () => {
+    const init = () =>
+      this.setState({
+        imgAnalyzer: initialize(
+          "canvasInput",
+          (window as any).cv,
+          this.handleSetColor
+        ),
+      });
+    setTimeout(init, 300);
+  };
+
   componentDidMount() {
-    const { width, height, image, opencv } = this.props;
+    const { width, height, image } = this.props;
     setUpForCanvas();
     if (image) {
       this.loadImage(image, width, height).then(() => {
-        if (opencv) {
-          this.setState({
-            imgAnalyzer: initialize("canvasInput", opencv),
-          });
-        }
-        this.setOptimalStrokeColor();
+        loadOpenCv(this.initImageAnalyser);
       });
     } else {
       this.initializeCanvas(width, height);
@@ -534,17 +517,8 @@ export class ReactPainter extends React.Component<
     cleanUpCanvas();
     revokeUrl(this.state.imageDownloadUrl);
     document.removeEventListener("keydown", this.keyPress);
+    removeLoadListener(this.initImageAnalyser);
     this.state.imgAnalyzer?.destroy();
-  }
-
-  componentDidUpdate(prevProps: ReactPainterProps) {
-    const { opencv } = this.props;
-    if (!prevProps.opencv && opencv) {
-      this.setState({
-        imgAnalyzer: initialize("canvasInput", opencv),
-      });
-      setTimeout(() => this.setOptimalStrokeColor(), 300);
-    }
   }
 
   render() {

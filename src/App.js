@@ -18,6 +18,7 @@ import ReactPainter from "./Painter/ReactPainter";
 import ToolbarButtons from "./ToolbarButtons";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import OpenCvSnack from "./OpenCvSnack";
+import loadOpenCv from "./utils/loadOpenCv";
 
 const drawerWidth = 240;
 
@@ -108,25 +109,19 @@ function App() {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = useState(false);
-  const [isOpenCvLoaded, setOpenCvLoaded] = useState(false);
   const [snackMessage, setSnackMessage] = useState({
     message: "OpenCV is loading...",
     severity: "info",
   });
   const [opencv, setOpenCv] = useState(undefined);
 
-  useEffect(() => {
-    if (!isOpenCvLoaded) return;
+  const onOpenCvLoad = () => {
     setOpenCv(window.cv);
     setSnackMessage({ message: "OpenCV Loaded!", severity: "success" });
-  }, [isOpenCvLoaded]);
+  };
 
   useEffect(() => {
-    const scriptTag = document.createElement("script");
-    scriptTag.src = "./utils/opencv.js";
-    scriptTag.onload = () => setOpenCvLoaded(true);
-    scriptTag.async = true;
-    document.body.appendChild(scriptTag);
+    loadOpenCv(onOpenCvLoad);
   }, []);
 
   const handleDrawerOpen = () => {
@@ -154,7 +149,7 @@ function App() {
   const painterState = {
     drawable,
     setDrawable,
-    isOpenCvLoaded,
+    isOpenCvLoaded: !!opencv,
     uploadFn: openGallery,
     shouldAssist,
     setAssist,
@@ -195,7 +190,7 @@ function App() {
                 Polygon Annotation Editor
               </Typography>
             </Toolbar>
-            {(loading || !isOpenCvLoaded) && <LinearProgress />}
+            {(loading || !opencv) && <LinearProgress />}
           </AppBar>
           {!showGallery && (
             <Drawer
@@ -246,7 +241,6 @@ function App() {
                   render={(renderProps) =>
                     onPainterRender(renderProps, painterState)
                   }
-                  opencv={opencv}
                   setLoading={setLoading}
                   image={imageUrl}
                   initialLineJoin={"round"}
