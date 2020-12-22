@@ -1,4 +1,4 @@
-import React from "react";
+import { FunctionComponent, useCallback, useEffect, useState } from "react";
 import { fetchImages } from "../utils/storage";
 import GalleryViewer from "./GalleryViewer";
 import GalleryViewerFallback from "./GalleryViewerFallback";
@@ -7,52 +7,31 @@ interface GalleryProps {
   onImageSelected?: (image: string | File) => void;
 }
 
-interface GalleryState {
-  images: string[];
-  maxToShow: number;
-}
+const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {
+  const [images, setImages] = useState([]);
+  const [boundary, setBoundary] = useState(20);
 
-class Gallery extends React.Component<GalleryProps, GalleryState> {
-  static defaultProps: Partial<GalleryProps> = {
-    onImageSelected: (image) => console.log("Image Selected", image),
-  };
-
-  state: GalleryState = {
-    images: [],
-    maxToShow: 20,
-  };
-
-  scrollListener = () => {
+  const scrollListener = useCallback(() => {
     const { innerHeight, scrollY } = window;
     if (innerHeight + scrollY >= document.body.offsetHeight - 200) {
-      this.needMoreImages();
+      setBoundary(boundary + 20);
     }
-  };
+  }, [boundary]);
 
-  componentDidMount() {
-    fetchImages().then((images) => this.setState({ images }));
-    window.addEventListener("scroll", this.scrollListener);
-  }
+  useEffect(() => {
+    fetchImages().then(setImages);
+    window.addEventListener("scroll", scrollListener);
+    return () => window.removeEventListener("scroll", scrollListener);
+  }, [scrollListener]);
 
-  componentWillUnmount() {
-    window.removeEventListener("scroll", this.scrollListener);
-  }
-
-  needMoreImages = () =>
-    this.setState({ maxToShow: this.state.maxToShow + 20 });
-
-  render() {
-    const { onImageSelected } = this.props;
-    const { images, maxToShow } = this.state;
-    return images.length ? (
-      <GalleryViewer
-        images={images.slice(0, maxToShow)}
-        onImageSelected={onImageSelected}
-      />
-    ) : (
-      <GalleryViewerFallback />
-    );
-  }
-}
+  return images.length ? (
+    <GalleryViewer
+      images={images.slice(0, boundary)}
+      onImageSelected={onImageSelected}
+    />
+  ) : (
+    <GalleryViewerFallback />
+  );
+};
 
 export default Gallery;

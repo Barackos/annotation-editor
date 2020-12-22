@@ -17,3 +17,9 @@
     margin-bottom: 48px;
   }
 }
+
+.canvasContainer {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: stretch;
+}
