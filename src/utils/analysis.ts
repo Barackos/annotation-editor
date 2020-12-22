@@ -22,6 +22,9 @@ export function initialize(ctxName: string, cv: any, colorSetter: ColorSetter) {
       contours.delete();
       hierarchy.delete();
     },
+    restore: () => {
+      cv.imshow(ctxName, src);
+    },
   };
 }
 

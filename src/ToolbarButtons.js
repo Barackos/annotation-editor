@@ -34,7 +34,7 @@ export default function ToolbarButtons({ painterState }) {
     document.getElementById("annotateLoader").value = "";
   };
   const toggleVisibility = () => {
-    showAnnotation();
+    showAnnotation(!shouldAssist);
     setAssist(!shouldAssist);
   };
   return (

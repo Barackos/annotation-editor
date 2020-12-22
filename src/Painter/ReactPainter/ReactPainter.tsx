@@ -401,7 +401,7 @@ export class ReactPainter extends React.Component<
     reader.onload = this.loadAnnotation;
   };
 
-  showAnnotation = () => {
+  showAnnotation = (shouldAssist: boolean) => {
     // let dst = new opencv.Mat();
     // opencv.cvtColor(src, src, opencv.COLOR_RGB2GRAY, 0);
     // let ksize = new opencv.Size(3, 3);
@@ -415,7 +415,8 @@ export class ReactPainter extends React.Component<
     // dst.delete();
 
     const { imgAnalyzer } = this.state;
-    imgAnalyzer?.drawContours();
+    if (shouldAssist) imgAnalyzer?.drawContours();
+    else imgAnalyzer.restore();
   };
 
   handleSetColor: ColorSetter = async (colorRgb) =>

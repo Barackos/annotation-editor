@@ -131,7 +131,10 @@ function App() {
 
   const [image, setImage] = useState(undefined);
   const [showGallery, setGalleryShown] = useState(true);
-  const openGallery = () => setGalleryShown(!showGallery);
+  const openGallery = () => {
+    setAssist(false);
+    setGalleryShown(!showGallery);
+  };
   const onImageSelected = (image) => {
     setImage(image);
     setGalleryShown(false);
@@ -153,7 +156,8 @@ function App() {
     canUndo: () => painterRef.current?.canUndo(),
     handleRedo: () => painterRef.current.handleRedo(),
     canRedo: () => painterRef.current?.canRedo(),
-    showAnnotation: () => painterRef.current?.showAnnotation(),
+    showAnnotation: (shouldAssist) =>
+      painterRef.current?.showAnnotation(shouldAssist),
   };
   return (
     <div className="App">
