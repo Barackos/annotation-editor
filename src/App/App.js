@@ -84,13 +84,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const images = [
-  "02d8190f899602ed63f2192e0afe097c.jpg",
-  "438373-2.jpg",
-  "geometric-shapes-prism-art-black-line-prism-decorative-art-prints-for-living-room-wallpaper-prints.jpg",
-  "Shapes.jpg",
-].map((imgName) => "./images/" + imgName);
-
 const Gallery = React.lazy(() =>
   import(/* webpackChunkName: "Gallery" */ `../Gallery`)
 );
@@ -136,14 +129,11 @@ function App() {
     setOpen(false);
   };
 
-  const [imageUrl, setImageUrl] = useState(undefined);
+  const [image, setImage] = useState(undefined);
   const [showGallery, setGalleryShown] = useState(true);
-  const openGallery = () => {
-    setImageUrl(images[Math.floor(Math.random() * 3)]);
-    setGalleryShown(!showGallery);
-  };
+  const openGallery = () => setGalleryShown(!showGallery);
   const onImageSelected = (image) => {
-    setImageUrl(image);
+    setImage(image);
     setGalleryShown(false);
   };
 
@@ -236,15 +226,12 @@ function App() {
                     Pick an Image:
                   </Typography>
                   <Suspense fallback={<GalleryFallback />}>
-                    <Gallery
-                      images={images.map((url) => ({ img: url }))}
-                      onImageSelected={onImageSelected}
-                    />
+                    <Gallery onImageSelected={onImageSelected} />
                   </Suspense>
                 </>
               ) : (
                 <ReactPainter
-                  key={imageUrl}
+                  key={image}
                   ref={painterRef}
                   width={1280}
                   isDrawable={drawable}
@@ -253,7 +240,7 @@ function App() {
                     onPainterRender(renderProps, painterState)
                   }
                   setLoading={setLoading}
-                  image={imageUrl}
+                  image={image}
                   initialLineJoin={"round"}
                 />
               )}
