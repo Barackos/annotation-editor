@@ -1,10 +1,11 @@
 import { FunctionComponent, useCallback, useEffect, useState } from "react";
 import { fetchImages } from "../utils/storage";
+import { OnImageSelected } from "./types";
 import GalleryViewer from "./GalleryViewer";
 import GalleryViewerFallback from "./GalleryViewerFallback";
 
 interface GalleryProps {
-  onImageSelected?: (image: File | Blob | string) => void;
+  onImageSelected?: OnImageSelected;
 }
 
 const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {

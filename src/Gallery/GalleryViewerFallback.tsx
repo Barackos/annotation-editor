@@ -1,21 +1,27 @@
+import { makeStyles } from "@material-ui/core/styles";
 import { Skeleton } from "@material-ui/lab";
 
+const useStyles = makeStyles((theme) => ({
+  row: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: "64px",
+  },
+  column: {
+    display: "flex",
+    flexDirection: "column",
+    height: window.innerHeight - 185,
+  },
+}));
+
 const Row = () => {
+  const classes = useStyles();
   const width = window.innerWidth - 118;
   const skeletonWidth = 250;
   const skeletons = Math.round(width / (skeletonWidth + 72));
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        // width: "calc(100vw - 48px)",
-        // width: "1000px",
-        width,
-        marginBottom: "64px",
-      }}
-    >
+    <div className={classes.row} style={{ width }}>
       {new Array(skeletons).fill(0).map((_, idx) => (
         <Skeleton
           variant="rect"
@@ -30,15 +36,10 @@ const Row = () => {
 };
 
 export default function GalleryViewerFallback() {
+  const classes = useStyles();
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: window.innerHeight - 185,
-      }}
-    >
-      {new Array(4).fill(0).map((val, idx) => (
+    <div className={classes.column}>
+      {new Array(4).fill(0).map((_, idx) => (
         <Row key={`row${idx}`} />
       ))}
     </div>

@@ -1,7 +1,17 @@
+import { FunctionComponent } from "react";
 import { ProGallery } from "pro-gallery";
 import "pro-gallery/dist/statics/main.css";
+import { OnImageSelected } from "./types";
 
-export default function GalleryViewer({ images, onImageSelected }) {
+interface Props {
+  images: string[];
+  onImageSelected?: OnImageSelected;
+}
+
+const GalleryViewer: FunctionComponent<Props> = ({
+  images,
+  onImageSelected,
+}) => {
   const items = images.map((url, index) => ({
     itemId: "sample-" + index,
     mediaUrl: url,
@@ -48,4 +58,6 @@ export default function GalleryViewer({ images, onImageSelected }) {
       eventsListener={listener}
     />
   );
-}
+};
+
+export default GalleryViewer;
