@@ -1,7 +1,7 @@
 import { FunctionComponent } from "react";
 import { ProGallery } from "pro-gallery";
-import "pro-gallery/dist/statics/main.css";
 import { OnImageSelected } from "./types";
+import "pro-gallery/dist/statics/main.css";
 
 interface Props {
   images: string[];
@@ -17,7 +17,7 @@ const GalleryViewer: FunctionComponent<Props> = ({
     mediaUrl: url,
     metaData: {
       type: "image",
-      width: 200,
+      width: 100,
       height: 100,
       title: "sample-title",
       description: "sample-description",
@@ -50,7 +50,6 @@ const GalleryViewer: FunctionComponent<Props> = ({
 
   return (
     <ProGallery
-      domId={"asd"}
       items={items}
       options={options}
       container={container}
