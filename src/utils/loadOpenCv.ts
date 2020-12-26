@@ -12,11 +12,11 @@ export function removeLoadListener(onLoadCallback: OnLoadCallback) {
 }
 
 function loadOpenCv(onLoadCallback: OnLoadCallback) {
-  const cv = (window as any).cv;
+  const getCv = () => (window as any).cv;
   if ((window as any).isOpenCvLoaded) {
-    onLoadCallback(cv);
+    onLoadCallback(getCv());
   } else {
-    addListener(() => onLoadCallback(cv));
+    addListener(() => onLoadCallback(getCv()));
   }
 }
 

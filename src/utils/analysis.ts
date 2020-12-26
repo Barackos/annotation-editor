@@ -37,8 +37,8 @@ function setOptimalStrokeColor(cv: any, colorSetter: ColorSetter) {
 }
 
 function getPoints(contours: any) {
-  const points = {};
-  for (let i = 0; i < 1; ++i) {
+  const points = [];
+  for (let i = 0; i < contours.size(); ++i) {
     const ci = contours.get(i);
     points[i] = [];
     for (let j = 0; j < ci.data32S.length; j += 2) {
@@ -145,4 +145,37 @@ export function drawContours(
   cv.imshow(ctxName, dst);
   //src.delete();
   dst.delete();
+}
+
+/**
+ * Measures distance between 2 points
+ */
+function distance(point1: Point, point2: Point) {
+  const { x: x1, y: y1 } = point1;
+  const { x: x2, y: y2 } = point2;
+  return Math.hypot(y2 - y1, x2 - x1);
+}
+
+/**
+ * Closest point to a base point
+ * @param base source point
+ * @param list points to measure distance from
+ * @returns closest point and its distance from base
+ */
+function findClosest(base: Point, list: Point[]) {
+  if (list.length === 0) return { dist: 0, point: base };
+  const [first, ...rest] = list;
+  let dist = distance(base, first);
+  let point = first;
+  rest.forEach((p) => {
+    const calcDist = distance(base, p);
+    if (calcDist < dist) {
+      dist = calcDist;
+      point = p;
+    }
+  });
+  return {
+    point,
+    dist,
+  };
 }
