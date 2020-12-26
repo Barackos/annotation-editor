@@ -2,25 +2,22 @@ import React, { Suspense, useEffect, useState } from "react";
 import clsx from "clsx";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
-import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import "./App.scss";
 import ReactPainter from "../Painter";
 import ToolbarButtons from "../Painter/ToolbarButtons";
-import LinearProgress from "@material-ui/core/LinearProgress";
 import OpenCvSnack from "../OpenCvSnack";
 import loadOpenCv from "../utils/loadOpenCv";
 import { GalleryFallback } from "../Gallery";
 import Login from "../Login";
 import { observeUser, signOut } from "../utils/auth";
 import { loadAnnotation, saveAnnotation } from "../utils/realtimeDb";
+import TopBar from "./TopBar";
 
 const drawerWidth = 240;
 
@@ -107,7 +104,7 @@ function App() {
   const classes = useStyles();
   const theme = useTheme();
   const [drawerOpened, setDrawerOpened] = React.useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
   const [snackMessage, setSnackMessage] = useState({
     message: "OpenCV is loading...",
     severity: "info",
@@ -125,9 +122,6 @@ function App() {
   }, []);
 
   useEffect(() => {}, []);
-
-  const handleDrawerOpen = () => setDrawerOpened(true);
-  const handleDrawerClose = () => setDrawerOpened(false);
 
   const [image, setImage] = useState(undefined);
   const [showGallery, setGalleryShown] = useState(true);
@@ -227,32 +221,12 @@ function App() {
       <header className="App-header">
         <div className={classes.root}>
           <CssBaseline />
-          <AppBar
-            position="fixed"
-            className={clsx(classes.appBar, {
-              [classes.appBarShift]: !showGallery && drawerOpened,
-            })}
-          >
-            <Toolbar>
-              {!showGallery && (
-                <IconButton
-                  color="inherit"
-                  aria-label="open drawer"
-                  onClick={handleDrawerOpen}
-                  edge="start"
-                  className={clsx(classes.menuButton, {
-                    [classes.hide]: drawerOpened,
-                  })}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Typography variant="h4" noWrap>
-                Polygon Annotation Editor
-              </Typography>
-            </Toolbar>
-            {(loading || !opencv) && <LinearProgress />}
-          </AppBar>
+          <TopBar
+            drawerOpened={drawerOpened}
+            isLoading={isLoading || !opencv}
+            setDrawerOpened={setDrawerOpened}
+            showGallery={showGallery}
+          />
           {!showGallery && (
             <Drawer
               variant="permanent"
@@ -268,7 +242,7 @@ function App() {
               }}
             >
               <div className={classes.toolbar}>
-                <IconButton onClick={handleDrawerClose}>
+                <IconButton onClick={() => setDrawerOpened(false)}>
                   {theme.direction === "rtl" ? (
                     <ChevronRightIcon />
                   ) : (
