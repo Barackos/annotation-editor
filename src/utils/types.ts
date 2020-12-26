@@ -12,3 +12,8 @@ export interface ColorRgb {
 }
 
 export type ColorSetter = (color: ColorRgb) => void;
+
+export interface GalleryImage {
+  name: string;
+  url: string;
+}

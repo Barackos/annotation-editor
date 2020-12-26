@@ -3,9 +3,10 @@ import { ProGallery } from "pro-gallery";
 import { OnImageSelected } from "./types";
 import "pro-gallery/dist/statics/main.css";
 import { blobToFile } from "../utils/general";
+import { GalleryImage } from "../utils/types";
 
 interface Props {
-  images: string[];
+  images: GalleryImage[];
   onImageSelected?: OnImageSelected;
 }
 
@@ -13,15 +14,15 @@ const GalleryViewer: FunctionComponent<Props> = ({
   images,
   onImageSelected,
 }) => {
-  const items = images.map((url, index) => ({
-    itemId: "sample-" + index,
+  const items = images.map(({ name, url }, index) => ({
+    itemId: name,
     mediaUrl: url,
     metaData: {
       type: "image",
       width: 100,
       height: 100,
-      title: "sample-title",
-      description: "sample-description",
+      title: name,
+      description: url,
       focalPoint: [0, 0],
     },
   }));
@@ -35,17 +36,13 @@ const GalleryViewer: FunctionComponent<Props> = ({
     overlayBackground: "rgba(8,8,8,0.35)",
   };
 
-  const listener = (eName, eData) => {
+  const listener = (eName, { itemId: name, url }) => {
     // console.log({ eName, eData });
     switch (eName) {
       case "ITEM_CLICKED":
-        fetch(eData.url).then(async (value) => {
-          const blob = await value.blob();
-          const imageName = eData.url
-            .substr(eData.url.lastIndexOf("/") + 1)
-            .replaceAll(/([._])/g, "-");
-          onImageSelected(blobToFile(blob, imageName));
-        });
+        fetch(url).then(async (value) =>
+          onImageSelected(blobToFile(await value.blob(), name))
+        );
         break;
       default:
         break;

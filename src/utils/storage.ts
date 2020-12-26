@@ -1,3 +1,4 @@
+import { GalleryImage } from "./types";
 import firebaseTypes from "firebase/index";
 import { isDevMode } from "../utils/general";
 
@@ -9,16 +10,13 @@ const remoteUrl = (imageName: string) =>
 
 const storage: firebaseTypes.storage.Storage = (window as any).storage;
 
-export const fetchImages = () =>
+export const fetchImages = (): Promise<GalleryImage[]> =>
   storage
     .ref("images")
     .listAll()
     .then(
-      (listResult) => {
-        const names = listResult.items.map((value) => value.name);
-        const images = names.map(imgUrl);
-        return images;
-      },
+      (listResult) =>
+        listResult.items.map(({ name }) => ({ name, url: imgUrl(name) })),
       (rejectReason) => {
         console.log(rejectReason);
         return [];
