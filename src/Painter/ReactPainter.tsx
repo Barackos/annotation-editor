@@ -404,7 +404,9 @@ export class ReactPainter extends React.Component<
 
     const { imgAnalyzer } = this.state;
     if (shouldAssist) imgAnalyzer?.drawContours();
-    else imgAnalyzer.restore();
+    else {
+      this.handleRedraw(this.state.undoSteps);
+    }
   };
 
   handleSetColor: ColorSetter = async (colorRgb) =>
