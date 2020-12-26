@@ -9,3 +9,16 @@ export const blobToFile = (theBlob: Blob, fileName: string): File => {
   //Cast to a File() type
   return theBlob as File;
 };
+
+function busyWait(continueOn: () => boolean, callback: Function) {
+  const busyWaiter = () =>
+    continueOn() ? setTimeout(busyWaiter, 300) : callback();
+  busyWaiter();
+}
+
+export function waitOnLibrary<T>(
+  predicate: () => boolean,
+  exec: () => T
+): Promise<T> {
+  return new Promise((resolve) => busyWait(predicate, () => resolve(exec())));
+}

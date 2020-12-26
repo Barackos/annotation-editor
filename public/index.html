@@ -28,7 +28,13 @@
     <title>Annotation Editor</title>
     <script type="text/javascript">
       isOpenCvLoaded = false;
+      firebaseUiLoaded = false;
+      firebaseAuthLoaded = false;
+      firebaseDbLoaded = false;
       const setLoaded = () => (isOpenCvLoaded = true);
+      const setFbUiLoaded = () => (firebaseUiLoaded = true);
+      const setFbAuthLoaded = () => (firebaseAuthLoaded = true);
+      const setFbDbLoaded = () => (firebaseDbLoaded = true);
     </script>
   </head>
   <body>
@@ -66,12 +72,26 @@
     <script
       async
       src="https://www.gstatic.com/firebasejs/8.1.2/firebase-auth.js"
+      onload="setFbAuthLoaded()"
     ></script>
     <script
       async
-      src="https://www.gstatic.com/firebasejs/8.1.2/firebase-firestore.js"
+      src="https://www.gstatic.com/firebasejs/8.1.2/firebase-database.js"
+      onload="setFbDbLoaded()"
     ></script>
     <script src="https://www.gstatic.com/firebasejs/8.1.2/firebase-storage.js"></script>
+
+    <!-- Firebase UI -->
+    <script
+      async
+      src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"
+      onload="setFbUiLoaded()"
+    ></script>
+    <link
+      type="text/css"
+      rel="stylesheet"
+      href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css"
+    />
 
     <script>
       // Your web app's Firebase configuration

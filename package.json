@@ -43,6 +43,7 @@
     ]
   },
   "devDependencies": {
-    "firebase": "^8.2.1"
+    "firebase": "^8.2.1",
+    "firebaseui": "^4.7.1"
   }
 }

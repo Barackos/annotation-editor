@@ -2,7 +2,7 @@ import * as PropTypes from "prop-types";
 import * as React from "react";
 import { initialize, rgbToString } from "../utils/analysis";
 import loadOpenCv, { removeLoadListener } from "../utils/loadOpenCv";
-import { ColorRgb, ColorSetter } from "../utils/types";
+import { ColorRgb, ColorSetter, DataStep } from "../utils/types";
 import {
   canvasToBlob,
   composeFn,
@@ -68,10 +68,6 @@ export interface ReactPainterProps {
   image?: File | Blob | string;
   render?: (props: RenderProps) => JSX.Element;
   setLoading?: (loading: boolean) => void;
-}
-interface DataStep {
-  x: number;
-  y: number;
 }
 
 export interface PainterState {
@@ -378,27 +374,16 @@ export class ReactPainter extends React.Component<
     downloadObjectAsJson(undoSteps, "Annotation");
   };
 
-  loadAnnotation: FileReader["onload"] = (evt) => {
-    try {
-      const obj = JSON.parse(evt.target.result.toString());
-      if (!Array.isArray(obj)) throw Error("Not an array");
-      this.handleRedraw(obj).then(() => {
-        this.props.setLoading(false);
-        this.setState({
-          undoSteps: obj,
-          redoSteps: [],
-        });
-      });
-    } catch (ex) {
-      alert("File is not a proper annotation object: " + ex);
-    }
-  };
+  getSteps = () => this.state.undoSteps;
 
-  handleLoadAnnotation = (file: File) => {
-    this.props.setLoading(true);
-    var reader = new FileReader();
-    reader.readAsText(file, "UTF-8");
-    reader.onload = this.loadAnnotation;
+  handleLoadAnnotation = (steps: DataStep[]) => {
+    this.handleRedraw(steps).then(() => {
+      this.props.setLoading(false);
+      this.setState({
+        undoSteps: steps,
+        redoSteps: [],
+      });
+    });
   };
 
   showAnnotation = (shouldAssist: boolean) => {

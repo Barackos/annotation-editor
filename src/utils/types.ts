@@ -3,6 +3,8 @@ export interface Point {
   y: number;
 }
 
+export type DataStep = Point;
+
 export interface ColorRgb {
   r: number;
   g: number;

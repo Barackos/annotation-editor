@@ -2,6 +2,7 @@ import { FunctionComponent } from "react";
 import { ProGallery } from "pro-gallery";
 import { OnImageSelected } from "./types";
 import "pro-gallery/dist/statics/main.css";
+import { blobToFile } from "../utils/general";
 
 interface Props {
   images: string[];
@@ -39,8 +40,11 @@ const GalleryViewer: FunctionComponent<Props> = ({
     switch (eName) {
       case "ITEM_CLICKED":
         fetch(eData.url).then(async (value) => {
-          const x = await value.blob();
-          onImageSelected(x);
+          const blob = await value.blob();
+          const imageName = eData.url
+            .substr(eData.url.lastIndexOf("/") + 1)
+            .replaceAll(/([._])/g, "-");
+          onImageSelected(blobToFile(blob, imageName));
         });
         break;
       default:

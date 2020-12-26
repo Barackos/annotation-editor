@@ -18,6 +18,9 @@ import LinearProgress from "@material-ui/core/LinearProgress";
 import OpenCvSnack from "../OpenCvSnack";
 import loadOpenCv from "../utils/loadOpenCv";
 import { GalleryFallback } from "../Gallery";
+import Login from "../Login";
+import { observeUser } from "../utils/auth";
+import { loadAnnotation, saveAnnotation } from "../utils/realtimeDb";
 
 const drawerWidth = 240;
 
@@ -103,13 +106,14 @@ const onPainterRender = (renderProps, state) => {
 function App() {
   const classes = useStyles();
   const theme = useTheme();
-  const [open, setOpen] = React.useState(false);
+  const [drawerOpened, setDrawerOpened] = React.useState(false);
   const [loading, setLoading] = useState(false);
   const [snackMessage, setSnackMessage] = useState({
     message: "OpenCV is loading...",
     severity: "info",
   });
   const [opencv, setOpenCv] = useState(undefined);
+  const [authOpen, showAuth] = useState(false);
 
   const onOpenCvLoad = () => {
     setOpenCv(window.cv);
@@ -120,13 +124,10 @@ function App() {
     loadOpenCv(onOpenCvLoad);
   }, []);
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
+  useEffect(() => {}, []);
 
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
+  const handleDrawerOpen = () => setDrawerOpened(true);
+  const handleDrawerClose = () => setDrawerOpened(false);
 
   const [image, setImage] = useState(undefined);
   const [showGallery, setGalleryShown] = useState(true);
@@ -142,6 +143,61 @@ function App() {
   const [drawable, setDrawable] = useState(false);
   const [shouldAssist, setAssist] = useState(false);
   const painterRef = React.createRef();
+
+  // Auth
+  const [user, setUser] = useState(undefined);
+  const [pending, setPending] = useState("");
+  useEffect(() => observeUser(setUser), []);
+  useEffect(() => {
+    // signOut();
+  }, []);
+
+  const handleAnnotationAction = (cta) => {
+    const action = pending || cta;
+    if (action) {
+      if (user) {
+        setLoading(true);
+        if (action === "load") {
+          const implementAnnotation = painterRef.current.handleLoadAnnotation;
+          loadAnnotation(user, image.name).then((steps) => {
+            if (!steps)
+              setSnackMessage({
+                message: "No annotations are saved for this image",
+                severity: "info",
+              });
+            else {
+              implementAnnotation(steps);
+              setSnackMessage({
+                message: "Loaded successfully!",
+                severity: "success",
+              });
+            }
+            setLoading(false);
+          });
+        } else if (action === "save") {
+          saveAnnotation(user, image.name, painterRef.current.getSteps()).then(
+            () => {
+              setLoading(false);
+              setSnackMessage({
+                message: "Saved successfully!",
+                severity: "success",
+              });
+            }
+          );
+        }
+        setPending("");
+        showAuth(false);
+      } else {
+        showAuth(true);
+      }
+    }
+  };
+  useEffect(handleAnnotationAction, [image?.name, painterRef, pending, user]);
+
+  const annotationCTA = (cta) => {
+    setPending(cta);
+    handleAnnotationAction(cta);
+  };
   const painterState = {
     drawable,
     setDrawable,
@@ -149,8 +205,8 @@ function App() {
     pickNewImg: openGallery,
     shouldAssist,
     setAssist,
-    handleSave: () => painterRef.current.handleSaveAnnotation(),
-    handleLoad: (filePath) => painterRef.current.handleLoadAnnotation(filePath),
+    handleSave: () => annotationCTA("save"),
+    handleLoad: () => annotationCTA("load"),
     handleUndo: () => painterRef.current.handleUndo(),
     canUndo: () => painterRef.current?.canUndo(),
     handleRedo: () => painterRef.current.handleRedo(),
@@ -166,7 +222,7 @@ function App() {
           <AppBar
             position="fixed"
             className={clsx(classes.appBar, {
-              [classes.appBarShift]: !showGallery && open,
+              [classes.appBarShift]: !showGallery && drawerOpened,
             })}
           >
             <Toolbar>
@@ -177,7 +233,7 @@ function App() {
                   onClick={handleDrawerOpen}
                   edge="start"
                   className={clsx(classes.menuButton, {
-                    [classes.hide]: open,
+                    [classes.hide]: drawerOpened,
                   })}
                 >
                   <MenuIcon />
@@ -193,13 +249,13 @@ function App() {
             <Drawer
               variant="permanent"
               className={clsx(classes.drawer, {
-                [classes.drawerOpen]: open,
-                [classes.drawerClose]: !open,
+                [classes.drawerOpen]: drawerOpened,
+                [classes.drawerClose]: !drawerOpened,
               })}
               classes={{
                 paper: clsx({
-                  [classes.drawerOpen]: open,
-                  [classes.drawerClose]: !open,
+                  [classes.drawerOpen]: drawerOpened,
+                  [classes.drawerClose]: !drawerOpened,
                 }),
               }}
             >
@@ -251,6 +307,7 @@ function App() {
           </main>
         </div>
         <OpenCvSnack messageData={snackMessage} />
+        <Login open={authOpen} />
       </header>
     </div>
   );

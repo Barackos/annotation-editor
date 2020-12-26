@@ -29,10 +29,6 @@ function ToolbarButtons({ painterState }) {
     shouldAssist,
     setAssist,
   } = painterState;
-  const onFileChange = (e) => {
-    if (e.target.files.length > 0) handleLoad(e.target.files[0]);
-    document.getElementById("annotateLoader").value = "";
-  };
   const toggleVisibility = () => {
     showAnnotation(!shouldAssist);
     setAssist(!shouldAssist);
@@ -79,21 +75,11 @@ function ToolbarButtons({ painterState }) {
       </List>
       <Divider />
       <List>
-        <ListItem
-          button
-          key={"Load"}
-          onClick={() => document.getElementById("annotateLoader").click()}
-        >
+        <ListItem button key={"Load"} onClick={handleLoad}>
           <ListItemIcon>
             <PublishIcon fontSize="large" />
           </ListItemIcon>
           <ListItemText primary={"Load Annotation"} />
-          <input
-            id="annotateLoader"
-            type="file"
-            style={{ visibility: "hidden" }}
-            onChange={onFileChange}
-          />
         </ListItem>
         <ListItem button key={"Save"} onClick={handleSave}>
           <ListItemIcon>
