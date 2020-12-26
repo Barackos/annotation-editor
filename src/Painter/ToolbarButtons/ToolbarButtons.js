@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
+import Avatar from "@material-ui/core/Avatar";
 import CreateIcon from "@material-ui/icons/Create";
 import UndoIcon from "@material-ui/icons/Undo";
 import RedoIcon from "@material-ui/icons/Redo";
@@ -11,9 +12,11 @@ import PublishIcon from "@material-ui/icons/Publish";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 import PhotoSizeSelectActualIcon from "@material-ui/icons/PhotoSizeSelectActual";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
 import Divider from "@material-ui/core/Divider";
 
-function ToolbarButtons({ painterState }) {
+function ToolbarButtons({ painterState, onMouseOver, onMouseOut }) {
   const {
     drawable,
     isOpenCvLoaded,
@@ -28,13 +31,36 @@ function ToolbarButtons({ painterState }) {
     canRedo,
     shouldAssist,
     setAssist,
+    user,
+    signOut,
   } = painterState;
+  const [anchorEl, setAnchorEl] = useState(null);
+  const handleAnchorClick = (event) => setAnchorEl(event.currentTarget);
+  const handleAnchorClose = (shouldSignOut) => {
+    setAnchorEl(null);
+    if (shouldSignOut) {
+      signOut();
+    }
+  };
   const toggleVisibility = () => {
     showAnnotation(!shouldAssist);
     setAssist(!shouldAssist);
   };
   return (
-    <>
+    <div onMouseOver={onMouseOver} onMouseOut={onMouseOut}>
+      {user && [
+        <List key="AccountAvatar">
+          <ListItem button key={"Account"} onClick={handleAnchorClick}>
+            <ListItemIcon>
+              <Avatar alt={user.displayName} src={user.photoURL}>
+                {!user.photoURL && user.displayName.charAt(0)}
+              </Avatar>
+            </ListItemIcon>
+            <ListItemText primary={user.displayName} />
+          </ListItem>
+        </List>,
+        <Divider key="AccountDivider" />,
+      ]}
       <List>
         <ListItem
           button
@@ -116,7 +142,16 @@ function ToolbarButtons({ painterState }) {
           <ListItemText primary={"New Image"} />
         </ListItem>
       </List>
-    </>
+      <Menu
+        id="simple-menu"
+        anchorEl={anchorEl}
+        keepMounted
+        open={Boolean(anchorEl)}
+        onClose={() => handleAnchorClose(false)}
+      >
+        <MenuItem onClick={() => handleAnchorClose(true)}>Sign Out</MenuItem>
+      </Menu>
+    </div>
   );
 }
 

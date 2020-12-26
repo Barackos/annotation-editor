@@ -19,7 +19,7 @@ import OpenCvSnack from "../OpenCvSnack";
 import loadOpenCv from "../utils/loadOpenCv";
 import { GalleryFallback } from "../Gallery";
 import Login from "../Login";
-import { observeUser } from "../utils/auth";
+import { observeUser, signOut } from "../utils/auth";
 import { loadAnnotation, saveAnnotation } from "../utils/realtimeDb";
 
 const drawerWidth = 240;
@@ -213,6 +213,14 @@ function App() {
     canRedo: () => painterRef.current?.canRedo(),
     showAnnotation: (shouldAssist) =>
       painterRef.current?.showAnnotation(shouldAssist),
+    user,
+    signOut: () =>
+      signOut().then(() =>
+        setSnackMessage({
+          message: "Signed out Successfully",
+          severity: "success",
+        })
+      ),
   };
   return (
     <div className="App">
@@ -269,7 +277,11 @@ function App() {
                 </IconButton>
               </div>
               <Divider />
-              <ToolbarButtons painterState={painterState} />
+              <ToolbarButtons
+                painterState={painterState}
+                onMouseOver={() => setDrawerOpened(true)}
+                onMouseOut={() => setDrawerOpened(false)}
+              />
             </Drawer>
           )}
           <main className={classes.content}>
@@ -308,7 +320,15 @@ function App() {
           </main>
         </div>
         <OpenCvSnack messageData={snackMessage} />
-        <Login open={authOpen} />
+        <Login
+          open={authOpen}
+          handleClose={(e, reason) => {
+            if (reason !== "loginSuccess") {
+              setPending("");
+              showAuth(false);
+            }
+          }}
+        />
       </header>
     </div>
   );
