@@ -1,9 +1,9 @@
-import { FunctionComponent } from "react";
-import { ProGallery } from "pro-gallery";
-import { OnImageSelected } from "./types";
-import "pro-gallery/dist/statics/main.css";
 import { blobToFile } from "../utils/general";
+import { FunctionComponent } from "react";
 import { GalleryImage } from "../utils/types";
+import { OnImageSelected } from "./types";
+import { ProGallery } from "pro-gallery";
+import "pro-gallery/dist/statics/main.css";
 
 interface Props {
   images: GalleryImage[];
@@ -36,12 +36,14 @@ const GalleryViewer: FunctionComponent<Props> = ({
     overlayBackground: "rgba(8,8,8,0.35)",
   };
 
-  const listener = (eName, { itemId: name, url }) => {
+  const listener = (eName: string, { id: name, url }) => {
     // console.log({ eName, eData });
     switch (eName) {
       case "ITEM_CLICKED":
         fetch(url).then(async (value) =>
-          onImageSelected(blobToFile(await value.blob(), name))
+          onImageSelected(
+            blobToFile(await value.blob(), name.replaceAll(/([._])/g, "-"))
+          )
         );
         break;
       default:
