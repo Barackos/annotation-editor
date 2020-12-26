@@ -91,16 +91,12 @@ function App() {
   const [opencv, setOpenCv] = useState(undefined);
   const [authOpen, showAuth] = useState(false);
 
-  const onOpenCvLoad = () => {
-    setOpenCv(window.cv);
-    setSnackMessage({ message: "OpenCV Loaded!", severity: "success" });
-  };
-
   useEffect(() => {
-    loadOpenCv(onOpenCvLoad);
+    loadOpenCv(() => {
+      setOpenCv(window.cv);
+      setSnackMessage({ message: "OpenCV Loaded!", severity: "success" });
+    });
   }, []);
-
-  useEffect(() => {}, []);
 
   const [image, setImage] = useState(undefined);
   const [showGallery, setGalleryShown] = useState(true);
@@ -121,9 +117,6 @@ function App() {
   const [user, setUser] = useState(undefined);
   const [pending, setPending] = useState("");
   useEffect(() => observeUser(setUser), []);
-  useEffect(() => {
-    // signOut();
-  }, []);
 
   const handleAnnotationAction = (cta) => {
     const action = pending || cta;
