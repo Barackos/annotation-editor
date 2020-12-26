@@ -1,4 +1,5 @@
 import { ColorRgb, ColorSetter, Point } from "./types";
+import { flatMap } from "lodash";
 
 export function rgbToString(colorRgb: ColorRgb) {
   const { r, g, b } = colorRgb;
@@ -10,6 +11,7 @@ export function initialize(ctxName: string, cv: any, colorSetter: ColorSetter) {
   let src = cv.imread(ctxName);
   const contours = findContours(src.clone(), cv, hierarchy);
   const points = getPoints(contours);
+  const points_flattened = flatMap(points);
   const drawColor = new cv.Scalar(0, 255, 0, 1);
 
   setOptimalStrokeColor(cv, colorSetter);
@@ -18,12 +20,15 @@ export function initialize(ctxName: string, cv: any, colorSetter: ColorSetter) {
     drawContours: () =>
       drawContours(ctxName, cv, src, contours, hierarchy, drawColor),
     points,
+    points_flattened,
     destroy: () => {
       contours.delete();
       hierarchy.delete();
     },
   };
 }
+
+export type ImageAnalyzer = ReturnType<typeof initialize>;
 
 function setOptimalStrokeColor(cv: any, colorSetter: ColorSetter) {
   const src = cv.imread("canvasInput");
@@ -37,7 +42,7 @@ function setOptimalStrokeColor(cv: any, colorSetter: ColorSetter) {
 }
 
 function getPoints(contours: any) {
-  const points = [];
+  const points: Point[][] = [];
   for (let i = 0; i < contours.size(); ++i) {
     const ci = contours.get(i);
     points[i] = [];
@@ -55,11 +60,12 @@ function getPoints(contours: any) {
 function findContours(src: any, cv: any, hierarchy: any) {
   let contours = new cv.MatVector();
   cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
-  let ksize = new cv.Size(3, 3);
-  let anchor = new cv.Point(-1, -1);
-  cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
-  // cv.bilateralFilter(src, dst, 9, 75, 75, cv.BORDER_DEFAULT);
-  cv.threshold(src, src, 190, 240, cv.THRESH_BINARY);
+  // let ksize = new cv.Size(3, 3);
+  // let anchor = new cv.Point(-1, -1);
+  // cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
+  cv.bilateralFilter(src.clone(), src, 9, 75, 75, cv.BORDER_DEFAULT);
+  cv.threshold(src, src, 127, 255, cv.THRESH_BINARY);
+  // cv.adaptiveThreshold(src.clone(), src, 200, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 3, 2);
 
   let poly = new cv.MatVector();
   cv.findContours(
@@ -162,7 +168,7 @@ function distance(point1: Point, point2: Point) {
  * @param list points to measure distance from
  * @returns closest point and its distance from base
  */
-function findClosest(base: Point, list: Point[]) {
+export function findClosest(base: Point, list: Point[]) {
   if (list.length === 0) return { dist: 0, point: base };
   const [first, ...rest] = list;
   let dist = distance(base, first);

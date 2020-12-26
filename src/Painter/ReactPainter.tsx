@@ -1,8 +1,13 @@
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import { initialize, rgbToString } from "../utils/analysis";
+import {
+  ImageAnalyzer,
+  initialize,
+  rgbToString,
+  findClosest,
+} from "../utils/analysis";
 import loadOpenCv, { removeLoadListener } from "../utils/loadOpenCv";
-import { ColorRgb, ColorSetter, DataStep } from "../utils/types";
+import { ColorRgb, ColorSetter, DataStep, Point } from "../utils/types";
 import {
   canvasToBlob,
   composeFn,
@@ -83,7 +88,7 @@ export interface PainterState {
   undoSteps: DataStep[];
   redoSteps: DataStep[];
   currStepStartingIdx: number;
-  imgAnalyzer: any;
+  imgAnalyzer: ImageAnalyzer;
 }
 
 export class ReactPainter extends React.Component<
@@ -233,12 +238,22 @@ export class ReactPainter extends React.Component<
     ];
   };
 
+  shortestEdgePoint = (base: Point) => {
+    const { imgAnalyzer } = this.state;
+    if (!imgAnalyzer) return base;
+    const threshold = 10;
+    const closest = findClosest(base, imgAnalyzer.points_flattened);
+    if (closest.dist > threshold) return base;
+    return closest.point;
+  };
+
   handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
     if (this.props.isDrawable) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const { undoSteps } = this.state;
-      this.lastX = offsetX;
-      this.lastY = offsetY;
+      const { x, y } = this.shortestEdgePoint({ x: offsetX, y: offsetY });
+      this.lastX = x;
+      this.lastY = y;
 
       const currStepStartingIdx =
         undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
@@ -249,13 +264,14 @@ export class ReactPainter extends React.Component<
     }
   };
 
-  draw = (lastX: number, lastY: number, newX: number, newY: number) => {
+  draw = (lastX: number, lastY: number, x: number, y: number) => {
     const { colorRgb, lineWidth, lineCap, lineJoin, undoSteps } = this.state;
     const ctx = this.ctx;
     ctx.strokeStyle = rgbToString(colorRgb);
     ctx.lineWidth = lineWidth * this.scalingFactor;
     ctx.lineCap = lineCap;
     ctx.lineJoin = lineJoin;
+    const { x: newX, y: newY } = this.shortestEdgePoint({ x, y });
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
@@ -483,15 +499,12 @@ export class ReactPainter extends React.Component<
     }
   };
 
-  initImageAnalyser = () => {
-    const init = () =>
-      this.setState({
-        imgAnalyzer: initialize(
-          "canvasInput",
-          (window as any).cv,
-          this.handleSetColor
-        ),
-      });
+  initImageAnalyser = (cv: any) => {
+    const init = () => {
+      const imgAnalyzer = initialize("canvasInput", cv, this.handleSetColor);
+      this.setState({ imgAnalyzer });
+      // (async () => this.showAnnotation(true))();
+    };
     setTimeout(init, 300);
   };
 

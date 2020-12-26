@@ -9,6 +9,7 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
+    "lodash": "^4.17.20",
     "node-sass": "^4.0.0",
     "pro-gallery": "^2.3.3",
     "react": "^17.0.1",
@@ -43,6 +44,7 @@
     ]
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.166",
     "firebase": "^8.2.1",
     "firebaseui": "^4.7.1"
   }
