@@ -92,6 +92,7 @@ export class ReactPainter extends React.Component<
 > {
   static propTypes = {
     color: PropTypes.any,
+    width: PropTypes.number,
     height: PropTypes.number,
     image: PropTypes.oneOfType([
       PropTypes.instanceOf(File),
@@ -103,7 +104,6 @@ export class ReactPainter extends React.Component<
     lineWidth: PropTypes.number,
     onSave: PropTypes.func,
     render: PropTypes.func,
-    width: PropTypes.number,
     undoSteps: PropTypes.arrayOf(
       PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })
     ),
@@ -222,11 +222,15 @@ export class ReactPainter extends React.Component<
     imageWidth: number,
     imageHeight: number
   ) => {
-    if (imageWidth <= cWidth) {
+    if (imageWidth <= cWidth && imageHeight <= cHeight) {
       return [imageWidth, imageHeight, 1];
     }
-    const scalingRatio = cWidth / imageWidth;
-    return [cWidth, scalingRatio * imageHeight, scalingRatio];
+    const scalingRatio = Math.min(cWidth / imageWidth, cHeight / imageHeight);
+    return [
+      scalingRatio * imageWidth,
+      scalingRatio * imageHeight,
+      scalingRatio,
+    ];
   };
 
   handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
@@ -337,12 +341,11 @@ export class ReactPainter extends React.Component<
   };
 
   handleRedraw = async (undoSteps: DataStep[]) => {
-    const { width, height } = this.canvasRef;
-    const ratio = width / 1280.0;
+    const { width, height } = this.props;
     const ctx = this.ctx;
 
     // ctx.clearRect(0, 0, width, height);
-    return this.loadImage(this.props.image, 1280, height / ratio).then(() => {
+    return this.loadImage(this.props.image, width, height).then(() => {
       if (undoSteps.length === 0) {
         return;
       }

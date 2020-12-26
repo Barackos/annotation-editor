@@ -292,7 +292,8 @@ function App() {
                 <ReactPainter
                   key={image}
                   ref={painterRef}
-                  width={window.innerWidth - 120}
+                  width={window.innerWidth - 200}
+                  height={window.innerHeight - 120}
                   isDrawable={drawable}
                   onSave={(blob) => console.log(blob)}
                   render={(renderProps) =>
