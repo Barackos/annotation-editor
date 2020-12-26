@@ -1,4 +1,4 @@
-type OnLoadCallback = () => void;
+type OnLoadCallback = (cv?: any) => void;
 
 const getScriptTag = () =>
   document.getElementById("scriptOpenCv") as HTMLScriptElement;
@@ -12,10 +12,11 @@ export function removeLoadListener(onLoadCallback: OnLoadCallback) {
 }
 
 function loadOpenCv(onLoadCallback: OnLoadCallback) {
+  const cv = (window as any).cv;
   if ((window as any).isOpenCvLoaded) {
-    onLoadCallback();
+    onLoadCallback(cv);
   } else {
-    addListener(onLoadCallback);
+    addListener(() => onLoadCallback(cv));
   }
 }
 

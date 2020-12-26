@@ -17,6 +17,7 @@ import { GalleryFallback } from "../Gallery";
 import Login from "../Login";
 import { observeUser, signOut } from "../utils/auth";
 import { loadAnnotation, saveAnnotation } from "../utils/realtimeDb";
+import firebaseTypes from "firebase/index";
 import TopBar from "./TopBar";
 
 const drawerWidth = 240;
@@ -62,8 +63,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Gallery = React.lazy(() =>
-  import(/* webpackChunkName: "Gallery" */ `../Gallery`)
+const Gallery = React.lazy(
+  () => import(/* webpackChunkName: "Gallery" */ `../Gallery`)
 );
 
 const onPainterRender = (renderProps, state) => {
@@ -92,8 +93,8 @@ function App() {
   const [authOpen, showAuth] = useState(false);
 
   useEffect(() => {
-    loadOpenCv(() => {
-      setOpenCv(window.cv);
+    loadOpenCv((cv) => {
+      setOpenCv(cv);
       setSnackMessage({ message: "OpenCV Loaded!", severity: "success" });
     });
   }, []);
@@ -111,14 +112,18 @@ function App() {
 
   const [drawable, setDrawable] = useState(false);
   const [shouldAssist, setAssist] = useState(false);
-  const painterRef = React.createRef();
+  const painterRef = React.createRef<ReactPainter>();
 
   // Auth
   const [user, setUser] = useState(undefined);
   const [pending, setPending] = useState("");
-  useEffect(() => observeUser(setUser), []);
+  useEffect(() => {
+    let dispatch: firebaseTypes.Unsubscribe;
+    observeUser(setUser).then((value) => (dispatch = value));
+    return () => dispatch();
+  }, []);
 
-  const handleAnnotationAction = (cta) => {
+  const handleAnnotationAction = (cta?: string) => {
     const action = pending || cta;
     if (action) {
       if (user) {
@@ -160,7 +165,7 @@ function App() {
   };
   useEffect(handleAnnotationAction, [image?.name, painterRef, pending, user]);
 
-  const annotationCTA = (cta) => {
+  const annotationCTA = (cta: string) => {
     setPending(cta);
     handleAnnotationAction(cta);
   };
