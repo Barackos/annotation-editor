@@ -60,13 +60,22 @@ function getPoints(contours: any) {
 function findContours(src: any, cv: any, hierarchy: any) {
   let contours = new cv.MatVector();
   cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY, 0);
-  // let ksize = new cv.Size(3, 3);
-  // let anchor = new cv.Point(-1, -1);
-  // cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
-  cv.bilateralFilter(src.clone(), src, 9, 75, 75, cv.BORDER_DEFAULT);
-  cv.threshold(src, src, 127, 255, cv.THRESH_BINARY);
-  // cv.adaptiveThreshold(src.clone(), src, 200, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 3, 2);
+  let ksize = new cv.Size(3, 3);
+  let anchor = new cv.Point(-1, -1);
+  cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
+  cv.bilateralFilter(src.clone(), src, 3, 75, 75, cv.BORDER_DEFAULT);
+  // cv.threshold(src, src, 180, 250, cv.THRESH_BINARY);
+  // cv.adaptiveThreshold(
+  //   src.clone(),
+  //   src,
+  //   200,
+  //   cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+  //   cv.THRESH_BINARY,
+  //   3,
+  //   2
+  // );
 
+  cv.Canny(src.clone(), src, 100, 200, 3, false);
   let poly = new cv.MatVector();
   cv.findContours(
     src,
@@ -106,15 +115,18 @@ export function drawContours(
       contours,
       i,
       drawColor,
-      4,
+      2,
       cv.LINE_8,
       hierarchy,
       100
     );
   }
 
-  let dst = new cv.Mat();
+  // let dst = new cv.Mat();
+  let dst = src.clone();
   cv.addWeighted(src, 0.75, contoursDst, 1, 0, dst, -1);
+
+  // let dst = src.clone();
 
   // ------
   // var corners = new cv.Mat();
@@ -148,6 +160,7 @@ export function drawContours(
   //   cv.circle(dst, center, r, color, -1, 8, 0);
   // }
   // ------
+  // shiThomasCornerDetection(cv, src, dst);
   cv.imshow(ctxName, dst);
   //src.delete();
   dst.delete();
@@ -185,3 +198,49 @@ export function findClosest(base: Point, list: Point[]) {
     dist,
   };
 }
+
+// function shiThomasCornerDetection(cv, src, dst) {
+//   const img = src.clone();
+//   var img_gray = new cv.Mat();
+//   var img_color = new cv.Mat(); // Opencv likes RGB
+//   cv.cvtColor(img, img_gray, cv.COLOR_RGBA2GRAY, 0);
+//   cv.cvtColor(img, img_color, cv.COLOR_RGBA2RGB, 0);
+//   img.delete();
+
+//   var corners = new cv.Mat();
+//   var qualityLevel = 0.01;
+//   var minDistance = 10;
+//   var blockSize = 3;
+//   var useHarrisDetector = true;
+//   var k = 0.04;
+//   var maxCorners = 1000;
+
+//   /// Apply corner detection
+//   cv.goodFeaturesToTrack(
+//     img_gray,
+//     corners,
+//     maxCorners,
+//     qualityLevel,
+//     minDistance,
+//     new cv.Mat(),
+//     blockSize,
+//     useHarrisDetector,
+//     k
+//   );
+//   img_gray.delete();
+//   img_color.delete();
+
+//   /// Draw corners detected
+//   var r = 4;
+//   for (var i = 0; i < corners.rows; i++) {
+//     var x = corners.row(i).data32F[0];
+//     var y = corners.row(i).data32F[1];
+//     // var color = new cv.Scalar(10, 200, 10);
+//     var color = new cv.Scalar(255, 0, 0, 1);
+//     let center = new cv.Point(x, y);
+//     cv.circle(dst, center, r, color, -1, 8, 0);
+//   }
+//   /// Show what you got
+//   // cv.imshow(ctxName, dst);
+//   corners.delete();
+// }
