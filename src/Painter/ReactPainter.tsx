@@ -33,7 +33,12 @@ export type LineCapType = "round" | "butt" | "square";
 type HandleRedrawParams = Partial<
   Pick<
     PainterState,
-    "undoSteps" | "redoSteps" | "shapes" | "currStepStartingIdx" | "isDrawing"
+    | "undoSteps"
+    | "redoSteps"
+    | "shapes"
+    | "shapesRedo"
+    | "currStepStartingIdx"
+    | "isDrawing"
   >
 >;
 type HandleRedraw = (params: HandleRedrawParams) => Promise<void>;
@@ -96,6 +101,7 @@ export interface PainterState {
   undoSteps: DataStep[];
   redoSteps: DataStep[];
   shapes: Point[][];
+  shapesRedo: Point[][];
   currStepStartingIdx: number;
   imgAnalyzer: ImageAnalyzer;
 }
@@ -160,6 +166,7 @@ export class ReactPainter extends React.Component<
     undoSteps: [],
     redoSteps: [],
     shapes: [],
+    shapesRedo: [],
     currStepStartingIdx: 0,
     imgAnalyzer: undefined,
   };
@@ -251,7 +258,7 @@ export class ReactPainter extends React.Component<
   shortestEdgePoint = (base: Point) => {
     const { imgAnalyzer } = this.state;
     if (!imgAnalyzer) return base;
-    const threshold = 10;
+    const threshold = 15;
     const closest = findClosest(base, imgAnalyzer.points_flattened);
     if (closest.dist > threshold) return base;
     return closest.point;
@@ -265,11 +272,9 @@ export class ReactPainter extends React.Component<
       this.lastX = x;
       this.lastY = y;
 
-      const currStepStartingIdx =
-        undoSteps.push({ x: this.lastX, y: this.lastY }) - 1;
       this.setState({
         isDrawing: true,
-        currStepStartingIdx,
+        currStepStartingIdx: undoSteps.length,
       });
     }
   };
@@ -282,29 +287,43 @@ export class ReactPainter extends React.Component<
     ctx.lineCap = lineCap;
     ctx.lineJoin = lineJoin;
     const { x: newX, y: newY } = this.shortestEdgePoint({ x, y });
+
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(newX, newY);
     ctx.stroke();
-    this.lastX = newX;
-    this.lastY = newY;
-
-    //Update undoSteps
-    if (undoSteps.length === 0) {
-      undoSteps.push({ x: lastX, y: lastY });
-    }
     undoSteps.push({ x: newX, y: newY });
     this.setState({ undoSteps });
   };
 
   handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { isDrawing } = this.state;
+    const { isDrawing, undoSteps, currStepStartingIdx } = this.state;
     if (this.props.isDrawable && isDrawing) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const lastX = this.lastX;
       const lastY = this.lastY;
-      this.draw(lastX, lastY, offsetX, offsetY);
+
+      const { x, y } = this.shortestEdgePoint({ x: offsetX, y: offsetY });
+      if (x === lastX && y === lastY) return;
+
+      let steps = undoSteps;
+      //Update undoSteps
+      if (steps.length === 0) {
+        steps.push({ x: lastX, y: lastY });
+      }
+
+      if (x !== offsetX || y !== offsetY) {
+        const firstSteps = steps.slice(0, currStepStartingIdx + 1);
+        steps = [...firstSteps, { x, y }];
+        const currIdx = steps.length;
+        this.setState({ currStepStartingIdx: currIdx });
+        this.handleRedraw({ undoSteps: steps, currStepStartingIdx: currIdx });
+      } else {
+        this.draw(lastX, lastY, x, y);
+      }
+      this.lastX = x;
+      this.lastY = y;
     }
   };
 
@@ -315,6 +334,7 @@ export class ReactPainter extends React.Component<
       redoSteps,
       currStepStartingIdx,
       shapes,
+      shapesRedo,
     } = this.state;
     const { setLoading, isDrawable } = this.props;
     if (isDrawable) {
@@ -324,22 +344,32 @@ export class ReactPainter extends React.Component<
         // Edge case - if mouseDown & instant mouseUp - nothing was drawn
         if (currStepStartingIdx + 1 === undoSteps.length) steps.pop();
         else clearRedo = true;
-        const firstSteps = undoSteps.slice(0, currStepStartingIdx || 1);
+        const firstSteps = undoSteps.slice(0, currStepStartingIdx + 1);
         steps = [...firstSteps, undoSteps[undoSteps.length - 1]];
-        // is new shape?
-        // if (steps[0] === steps[steps.length - 1]) {
-        //   shapes.push(steps);
-        //   steps = [];
-        // }
+        steps = steps.filter(
+          (() => {
+            let p: DataStep = { x: undefined, y: undefined };
+            return (point: DataStep) => {
+              const toReturn = JSON.stringify(p) !== JSON.stringify(point);
+              p = point;
+              return toReturn;
+            };
+          })()
+        );
+        // is new shape? deep equality check
+        if (this.isProperShape(steps)) {
+          shapes.push(steps);
+          steps = [];
+          this.ctx.closePath();
+        }
         setLoading(true);
-        // setTimeout(function () {
-        //   setLoading(false);
-        // }, 300);
         this.handleRedraw({
           isDrawing: false,
           undoSteps: steps,
           redoSteps: clearRedo ? [] : redoSteps,
           currStepStartingIdx: 0,
+          shapes,
+          shapesRedo: clearRedo ? [] : shapesRedo,
         }).then(() => setLoading(false));
       }
     }
@@ -348,60 +378,94 @@ export class ReactPainter extends React.Component<
   canUndo = () => this.state.undoSteps.length > 0;
   canRedo = () => this.state.redoSteps.length > 0;
 
+  isProperShape = (steps: DataStep[]) =>
+    steps.length > 1 &&
+    JSON.stringify(steps[0]) === JSON.stringify(steps[steps.length - 1]);
+
   handleUndo = () => {
-    const { undoSteps, redoSteps } = this.state;
-    if (undoSteps.length > 0) {
-      redoSteps.push(undoSteps.pop());
-      if (undoSteps.length === 1) redoSteps.push(undoSteps.pop());
-      this.handleRedraw({ undoSteps });
+    const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
+    let undos = undoSteps,
+      redos = redoSteps;
+    if (undos.length > 0) {
+      redos.push(undos.pop());
+      if (undos.length === 1) {
+        redos.push(undos.pop());
+        shapesRedo.push(redos);
+        redos = [];
+      }
+    } else if (shapes.length > 0) {
+      undos = shapes.pop();
+      redos.push(undos.pop());
     }
+    this.handleRedraw({
+      undoSteps: undos,
+      redoSteps: redos,
+      shapes,
+      shapesRedo,
+    });
   };
 
   handleRedo = () => {
-    const { undoSteps, redoSteps } = this.state;
-    if (redoSteps.length === 0) return;
-
-    const { x: prevX, y: prevY } =
-      undoSteps.length > 0 ? undoSteps[undoSteps.length - 1] : redoSteps.pop();
-    const { x, y } = redoSteps.pop();
-
-    this.draw(prevX, prevY, x, y);
-
-    this.setState({
-      redoSteps,
+    const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
+    let undos = undoSteps,
+      redos = redoSteps;
+    if (redos.length > 0) {
+      undos.push(redos.pop());
+      if (this.isProperShape(undos)) {
+        shapes.push(undos);
+        undos = [];
+      }
+    } else if (shapesRedo.length > 0) {
+      redos = shapesRedo.pop();
+      undos.push(redos.pop());
+      undos.push(redos.pop());
+    }
+    this.handleRedraw({
+      undoSteps: undos,
+      redoSteps: redos,
+      shapes,
+      shapesRedo,
     });
   };
 
   handleRedraw: HandleRedraw = async ({
     undoSteps = this.state.undoSteps,
+    redoSteps = this.state.redoSteps,
     shapes = this.state.shapes,
+    shapesRedo = this.state.shapesRedo,
     currStepStartingIdx = this.state.currStepStartingIdx,
     isDrawing = this.state.isDrawing,
-    redoSteps = this.state.redoSteps,
   }) => {
     const { width, height } = this.props;
     const ctx = this.ctx;
 
     // ctx.clearRect(0, 0, width, height);
-    return this.loadImage(this.props.image, width, height).then(() => {
-      if (undoSteps.length === 0) {
-        return;
-      }
-      ctx.beginPath();
-      const [firstStep, ...rest] = undoSteps;
-      ctx.moveTo(firstStep.x, firstStep.y);
+    this.loadImage(this.props.image, width, height).then(() => {
+      const drawSteps = (steps: DataStep[]) => {
+        if (steps.length === 0) {
+          return;
+        }
+        ctx.beginPath();
+        const [firstStep, ...rest] = steps;
+        ctx.moveTo(firstStep.x, firstStep.y);
 
-      rest.forEach((step) => {
-        ctx.lineTo(step.x, step.y);
-      });
-      ctx.stroke();
-      this.setState({
-        undoSteps,
-        shapes,
-        currStepStartingIdx,
-        isDrawing,
-        redoSteps,
-      });
+        rest.forEach((step) => {
+          ctx.lineTo(step.x, step.y);
+        });
+        ctx.stroke();
+        ctx.closePath();
+        ctx.save();
+      };
+      shapes.forEach(drawSteps);
+      drawSteps(undoSteps);
+    });
+    this.setState({
+      undoSteps,
+      redoSteps,
+      shapes,
+      shapesRedo,
+      currStepStartingIdx,
+      isDrawing,
     });
   };
 

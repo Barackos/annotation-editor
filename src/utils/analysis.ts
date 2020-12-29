@@ -114,11 +114,7 @@ export function drawContours(
       contoursDst,
       contours,
       i,
-      new cv.Scalar(
-        Math.round(Math.random() * 255),
-        Math.round(Math.random() * 255),
-        Math.round(Math.random() * 255)
-      ),
+      drawColor,
       2,
       cv.LINE_8,
       hierarchy,
