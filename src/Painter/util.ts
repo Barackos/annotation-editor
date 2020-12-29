@@ -1,3 +1,4 @@
+import { SavedAnnotation } from "./../utils/types";
 export function dataUrlToArrayBuffer(dataURI: string): [string, ArrayBuffer] {
   const type = dataURI.match(/:([^}]*);/)[1];
   const byteString = atob(dataURI.split(",")[1]);
@@ -157,7 +158,10 @@ export const makeAjaxHeadRequest = (
     }
   });
 
-export function downloadObjectAsJson(exportObj: any, exportName: string) {
+export function downloadObjectAsJson(
+  exportObj: SavedAnnotation,
+  exportName: string
+) {
   var dataStr =
     "data:text/json;charset=utf-8," +
     encodeURIComponent(JSON.stringify(exportObj));

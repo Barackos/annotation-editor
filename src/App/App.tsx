@@ -130,14 +130,14 @@ function App() {
         setLoading(true);
         if (action === "load") {
           const implementAnnotation = painterRef.current.handleLoadAnnotation;
-          loadAnnotation(user, image.name).then((steps) => {
-            if (!steps)
+          loadAnnotation(user, image.name).then((annotations) => {
+            if (!annotations)
               setSnackMessage({
                 message: "No annotations are saved for this image",
                 severity: "info",
               });
             else {
-              implementAnnotation(steps);
+              implementAnnotation(annotations);
               setSnackMessage({
                 message: "Loaded successfully!",
                 severity: "success",
@@ -146,15 +146,17 @@ function App() {
             setLoading(false);
           });
         } else if (action === "save") {
-          saveAnnotation(user, image.name, painterRef.current.getSteps()).then(
-            () => {
-              setLoading(false);
-              setSnackMessage({
-                message: "Saved successfully!",
-                severity: "success",
-              });
-            }
-          );
+          saveAnnotation(
+            user,
+            image.name,
+            painterRef.current.getAnnotations()
+          ).then(() => {
+            setLoading(false);
+            setSnackMessage({
+              message: "Saved successfully!",
+              severity: "success",
+            });
+          });
         }
         setPending("");
         showAuth(false);

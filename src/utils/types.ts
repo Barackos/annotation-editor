@@ -17,3 +17,10 @@ export interface GalleryImage {
   name: string;
   url: string;
 }
+
+export interface SavedAnnotation {
+  undoSteps: DataStep[];
+  redoSteps: DataStep[];
+  shapes: Point[][];
+  shapesRedo: Point[][];
+}

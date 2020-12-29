@@ -7,7 +7,13 @@ import {
   findClosest,
 } from "../utils/analysis";
 import loadOpenCv, { removeLoadListener } from "../utils/loadOpenCv";
-import { ColorRgb, ColorSetter, DataStep, Point } from "../utils/types";
+import {
+  ColorRgb,
+  ColorSetter,
+  DataStep,
+  Point,
+  SavedAnnotation,
+} from "../utils/types";
 import {
   canvasToBlob,
   composeFn,
@@ -88,7 +94,7 @@ export interface ReactPainterProps {
   setLoading?: (loading: boolean) => void;
 }
 
-export interface PainterState {
+export interface PainterState extends SavedAnnotation {
   canvasHeight: number;
   canvasWidth: number;
   imageCanDownload: boolean;
@@ -98,10 +104,6 @@ export interface PainterState {
   lineWidth: number;
   lineJoin: LineJoinType;
   lineCap: LineCapType;
-  undoSteps: DataStep[];
-  redoSteps: DataStep[];
-  shapes: Point[][];
-  shapesRedo: Point[][];
   currStepStartingIdx: number;
   imgAnalyzer: ImageAnalyzer;
 }
@@ -481,15 +483,16 @@ export class ReactPainter extends React.Component<
       .catch((err) => console.error("in ReactPainter handleSaveBlob", err));
   };
 
-  handleSaveAnnotation = () => {
-    const { undoSteps } = this.state;
-    downloadObjectAsJson(undoSteps, "Annotation");
+  handleSaveAnnotation = () =>
+    downloadObjectAsJson(this.getAnnotations(), "Annotation");
+
+  getAnnotations = () => {
+    const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
+    return { undoSteps, redoSteps, shapes, shapesRedo };
   };
 
-  getSteps = () => this.state.undoSteps;
-
-  handleLoadAnnotation = (undoSteps: DataStep[]) => {
-    this.handleRedraw({ undoSteps, redoSteps: [] }).then(() => {
+  handleLoadAnnotation = (savedAnnotation: SavedAnnotation) => {
+    this.handleRedraw(savedAnnotation).then(() => {
       this.props.setLoading(false);
     });
   };

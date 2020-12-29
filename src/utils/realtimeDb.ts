@@ -1,4 +1,4 @@
-import { DataStep } from "./types";
+import { SavedAnnotation } from "./types";
 import firebaseTypes from "firebase/index";
 import { waitOnLibrary } from "./general";
 
@@ -16,7 +16,7 @@ export async function loadAnnotation(user: firebaseTypes.User, image: string) {
     return db
       .ref(`users/${user.uid}/annotations/${image}`)
       .once("value")
-      .then(
+      .then<SavedAnnotation>(
         (value) => value.val(),
         (onrejected) => {
           alert(onrejected);
@@ -29,10 +29,10 @@ export async function loadAnnotation(user: firebaseTypes.User, image: string) {
 export async function saveAnnotation(
   user: firebaseTypes.User,
   image: string,
-  steps: DataStep[]
+  annotations: SavedAnnotation
 ) {
   return await ensureDbLoaded(() => {
     const db = getDatabase()();
-    return db.ref(`users/${user.uid}/annotations/${image}`).set(steps);
+    return db.ref(`users/${user.uid}/annotations/${image}`).set(annotations);
   });
 }
