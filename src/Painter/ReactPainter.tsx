@@ -30,6 +30,14 @@ const cleanUpCanvas = () => {
 export type LineJoinType = "round" | "bevel" | "miter";
 export type LineCapType = "round" | "butt" | "square";
 
+type HandleRedrawParams = Partial<
+  Pick<
+    PainterState,
+    "undoSteps" | "redoSteps" | "shapes" | "currStepStartingIdx" | "isDrawing"
+  >
+>;
+type HandleRedraw = (params: HandleRedrawParams) => Promise<void>;
+
 export interface CanvasProps {
   onMouseDown: React.MouseEventHandler<HTMLCanvasElement>;
   onTouchStart: React.TouchEventHandler<HTMLCanvasElement>;
@@ -87,6 +95,7 @@ export interface PainterState {
   lineCap: LineCapType;
   undoSteps: DataStep[];
   redoSteps: DataStep[];
+  shapes: Point[][];
   currStepStartingIdx: number;
   imgAnalyzer: ImageAnalyzer;
 }
@@ -150,6 +159,7 @@ export class ReactPainter extends React.Component<
     lineWidth: this.props.initialLineWidth,
     undoSteps: [],
     redoSteps: [],
+    shapes: [],
     currStepStartingIdx: 0,
     imgAnalyzer: undefined,
   };
@@ -299,7 +309,13 @@ export class ReactPainter extends React.Component<
   };
 
   handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { isDrawing, undoSteps, redoSteps, currStepStartingIdx } = this.state;
+    const {
+      isDrawing,
+      undoSteps,
+      redoSteps,
+      currStepStartingIdx,
+      shapes,
+    } = this.state;
     const { setLoading, isDrawable } = this.props;
     if (isDrawable) {
       let steps = undoSteps;
@@ -310,17 +326,21 @@ export class ReactPainter extends React.Component<
         else clearRedo = true;
         const firstSteps = undoSteps.slice(0, currStepStartingIdx || 1);
         steps = [...firstSteps, undoSteps[undoSteps.length - 1]];
+        // is new shape?
+        // if (steps[0] === steps[steps.length - 1]) {
+        //   shapes.push(steps);
+        //   steps = [];
+        // }
         setLoading(true);
         // setTimeout(function () {
         //   setLoading(false);
         // }, 300);
-        this.setState({
+        this.handleRedraw({
           isDrawing: false,
           undoSteps: steps,
           redoSteps: clearRedo ? [] : redoSteps,
           currStepStartingIdx: 0,
-        });
-        this.handleRedraw(steps).then(() => setLoading(false));
+        }).then(() => setLoading(false));
       }
     }
   };
@@ -333,12 +353,8 @@ export class ReactPainter extends React.Component<
     if (undoSteps.length > 0) {
       redoSteps.push(undoSteps.pop());
       if (undoSteps.length === 1) redoSteps.push(undoSteps.pop());
-      this.handleRedraw(undoSteps);
+      this.handleRedraw({ undoSteps });
     }
-
-    this.setState({
-      undoSteps,
-    });
   };
 
   handleRedo = () => {
@@ -356,7 +372,13 @@ export class ReactPainter extends React.Component<
     });
   };
 
-  handleRedraw = async (undoSteps: DataStep[]) => {
+  handleRedraw: HandleRedraw = async ({
+    undoSteps = this.state.undoSteps,
+    shapes = this.state.shapes,
+    currStepStartingIdx = this.state.currStepStartingIdx,
+    isDrawing = this.state.isDrawing,
+    redoSteps = this.state.redoSteps,
+  }) => {
     const { width, height } = this.props;
     const ctx = this.ctx;
 
@@ -373,6 +395,13 @@ export class ReactPainter extends React.Component<
         ctx.lineTo(step.x, step.y);
       });
       ctx.stroke();
+      this.setState({
+        undoSteps,
+        shapes,
+        currStepStartingIdx,
+        isDrawing,
+        redoSteps,
+      });
     });
   };
 
@@ -395,13 +424,9 @@ export class ReactPainter extends React.Component<
 
   getSteps = () => this.state.undoSteps;
 
-  handleLoadAnnotation = (steps: DataStep[]) => {
-    this.handleRedraw(steps).then(() => {
+  handleLoadAnnotation = (undoSteps: DataStep[]) => {
+    this.handleRedraw({ undoSteps, redoSteps: [] }).then(() => {
       this.props.setLoading(false);
-      this.setState({
-        undoSteps: steps,
-        redoSteps: [],
-      });
     });
   };
 
@@ -418,10 +443,10 @@ export class ReactPainter extends React.Component<
     // src.delete();
     // dst.delete();
 
-    const { imgAnalyzer } = this.state;
+    const { imgAnalyzer, undoSteps } = this.state;
     if (shouldAssist) imgAnalyzer?.drawContours();
     else {
-      this.handleRedraw(this.state.undoSteps);
+      this.handleRedraw({ undoSteps });
     }
   };
 
