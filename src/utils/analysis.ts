@@ -114,7 +114,11 @@ export function drawContours(
       contoursDst,
       contours,
       i,
-      drawColor,
+      new cv.Scalar(
+        Math.round(Math.random() * 255),
+        Math.round(Math.random() * 255),
+        Math.round(Math.random() * 255)
+      ),
       2,
       cv.LINE_8,
       hierarchy,
@@ -196,6 +200,30 @@ export function findClosest(base: Point, list: Point[]) {
   return {
     point,
     dist,
+  };
+}
+
+export function findClosestWithContour(base: Point, lists: Point[][]) {
+  if (lists.length === 0) return { dist: 0, point: base, i: undefined };
+  const [firstList, ...rest] = lists;
+  const firstResult = findClosest(base, firstList);
+  let i = 0;
+  let dist = firstResult.dist;
+  let point = firstResult.point;
+
+  rest.forEach((list, idx) => {
+    const { dist: newDist, point: newPoint } = findClosest(base, list);
+    if (newDist < dist) {
+      dist = newDist;
+      point = newPoint;
+      i = idx;
+    }
+  });
+
+  return {
+    dist,
+    point,
+    i,
   };
 }
 
