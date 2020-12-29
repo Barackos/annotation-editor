@@ -257,11 +257,15 @@ export class ReactPainter extends React.Component<
     ];
   };
 
-  shortestEdgePoint = (base: Point) => {
+  findClosestVertex = (base: Point, include?: Point) => {
     const { imgAnalyzer } = this.state;
     if (!imgAnalyzer) return base;
     const threshold = 15;
-    const closest = findClosest(base, imgAnalyzer.points_flattened);
+    // Include first point as a snipping vertex
+    const points = [...imgAnalyzer.points_flattened].concat(
+      include ? [include] : []
+    );
+    const closest = findClosest(base, points);
     if (closest.dist > threshold) return base;
     return closest.point;
   };
@@ -270,7 +274,7 @@ export class ReactPainter extends React.Component<
     if (this.props.isDrawable) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const { undoSteps } = this.state;
-      const { x, y } = this.shortestEdgePoint({ x: offsetX, y: offsetY });
+      const { x, y } = this.findClosestVertex({ x: offsetX, y: offsetY });
       this.lastX = x;
       this.lastY = y;
 
@@ -288,14 +292,13 @@ export class ReactPainter extends React.Component<
     ctx.lineWidth = lineWidth * this.scalingFactor;
     ctx.lineCap = lineCap;
     ctx.lineJoin = lineJoin;
-    const { x: newX, y: newY } = this.shortestEdgePoint({ x, y });
 
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
-    ctx.lineTo(newX, newY);
+    ctx.lineTo(x, y);
     ctx.stroke();
-    undoSteps.push({ x: newX, y: newY });
+    undoSteps.push({ x, y });
     this.setState({ undoSteps });
   };
 
@@ -306,7 +309,10 @@ export class ReactPainter extends React.Component<
       const lastX = this.lastX;
       const lastY = this.lastY;
 
-      const { x, y } = this.shortestEdgePoint({ x: offsetX, y: offsetY });
+      const { x, y } = this.findClosestVertex(
+        { x: offsetX, y: offsetY },
+        undoSteps[0]
+      );
       if (x === lastX && y === lastY) return;
 
       let steps = undoSteps;
@@ -458,7 +464,13 @@ export class ReactPainter extends React.Component<
         ctx.closePath();
         ctx.save();
       };
+      //Draw shapes first
+      ctx.strokeStyle = rgbToString({ r: 0, g: 255, b: 0 });
+      ctx.save();
       shapes.forEach(drawSteps);
+
+      //Draw undo steps
+      ctx.strokeStyle = rgbToString(this.state.colorRgb);
       drawSteps(undoSteps);
     });
     this.setState({
