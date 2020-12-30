@@ -3,6 +3,7 @@ import { fetchImages } from "../utils/storage";
 import { OnImageSelected } from "./types";
 import GalleryViewer from "./GalleryViewer";
 import GalleryViewerFallback from "./GalleryViewerFallback";
+import { shuffleArray } from "../utils/general";
 
 const interval = 20;
 interface GalleryProps {
@@ -21,7 +22,7 @@ const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {
   }, [boundary]);
 
   useEffect(() => {
-    fetchImages().then(setImages);
+    fetchImages().then((images) => setImages(shuffleArray(images)));
   }, []);
 
   useEffect(() => {
