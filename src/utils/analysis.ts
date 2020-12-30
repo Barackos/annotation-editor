@@ -63,7 +63,7 @@ function findContours(src: any, cv: any, hierarchy: any) {
   let ksize = new cv.Size(3, 3);
   let anchor = new cv.Point(-1, -1);
   cv.blur(src, src, ksize, anchor, cv.BORDER_DEFAULT);
-  cv.bilateralFilter(src.clone(), src, 3, 75, 75, cv.BORDER_DEFAULT);
+  cv.bilateralFilter(src.clone(), src, 3, 100, 100, cv.BORDER_DEFAULT);
   // cv.threshold(src, src, 180, 250, cv.THRESH_BINARY);
   // cv.adaptiveThreshold(
   //   src.clone(),
@@ -75,7 +75,7 @@ function findContours(src: any, cv: any, hierarchy: any) {
   //   2
   // );
 
-  cv.Canny(src.clone(), src, 100, 200, 3, false);
+  cv.Canny(src.clone(), src, 20, 130, 3, false);
   let poly = new cv.MatVector();
   cv.findContours(
     src,

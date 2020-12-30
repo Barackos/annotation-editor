@@ -260,7 +260,7 @@ export class ReactPainter extends React.Component<
   findClosestVertex = (base: Point, include?: Point) => {
     const { imgAnalyzer } = this.state;
     if (!imgAnalyzer) return base;
-    const threshold = 15;
+    const threshold = 10;
     // Include first point as a snipping vertex
     const points = [...imgAnalyzer.points_flattened].concat(
       include ? [include] : []
