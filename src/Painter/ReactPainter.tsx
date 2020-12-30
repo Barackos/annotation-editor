@@ -106,6 +106,7 @@ export interface PainterState extends SavedAnnotation {
   lineCap: LineCapType;
   currStepStartingIdx: number;
   imgAnalyzer: ImageAnalyzer;
+  shiftKey: boolean;
 }
 
 export class ReactPainter extends React.Component<
@@ -126,12 +127,6 @@ export class ReactPainter extends React.Component<
     lineWidth: PropTypes.number,
     onSave: PropTypes.func,
     render: PropTypes.func,
-    undoSteps: PropTypes.arrayOf(
-      PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })
-    ),
-    redoSteps: PropTypes.arrayOf(
-      PropTypes.shape({ x: PropTypes.number, y: PropTypes.number })
-    ),
     currStepStartingIdx: PropTypes.number,
     setLoading: PropTypes.func,
   };
@@ -170,6 +165,7 @@ export class ReactPainter extends React.Component<
     shapes: [],
     shapesRedo: [],
     currStepStartingIdx: 0,
+    shiftKey: false,
     imgAnalyzer: undefined,
   };
 
@@ -303,16 +299,15 @@ export class ReactPainter extends React.Component<
   };
 
   handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
-    const { isDrawing, undoSteps, currStepStartingIdx } = this.state;
+    const { isDrawing, undoSteps, shiftKey, currStepStartingIdx } = this.state;
     if (this.props.isDrawable && isDrawing) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const lastX = this.lastX;
       const lastY = this.lastY;
 
-      const { x, y } = this.findClosestVertex(
-        { x: offsetX, y: offsetY },
-        undoSteps[0]
-      );
+      const { x, y } = !shiftKey
+        ? this.findClosestVertex({ x: offsetX, y: offsetY }, undoSteps[0])
+        : { x: offsetX, y: offsetY };
       if (x === lastX && y === lastY) return;
 
       let steps = undoSteps;
@@ -321,7 +316,7 @@ export class ReactPainter extends React.Component<
         steps.push({ x: lastX, y: lastY });
       }
 
-      if (x !== offsetX || y !== offsetY) {
+      if (!shiftKey && (x !== offsetX || y !== offsetY)) {
         const firstSteps = steps.slice(0, currStepStartingIdx + 1);
         steps = [...firstSteps, { x, y }];
         const currIdx = steps.length;
@@ -596,12 +591,17 @@ export class ReactPainter extends React.Component<
         this.initializeCanvas(width, height);
       });
 
-  keyPress: GlobalEventHandlers["onkeydown"] = (e) => {
-    if (e.key.toLowerCase() === "z" && (e.ctrlKey || e.metaKey)) {
-      if (e.shiftKey) this.handleRedo();
+  keyDown: GlobalEventHandlers["onkeydown"] = (e) => {
+    const { key, shiftKey, ctrlKey, metaKey } = e;
+    if (key.toLowerCase() === "z" && (ctrlKey || metaKey)) {
+      if (shiftKey) this.handleRedo();
       else this.handleUndo();
     }
+    this.setState({ shiftKey });
   };
+
+  keyUp: GlobalEventHandlers["onkeyup"] = ({ shiftKey }) =>
+    this.setState({ shiftKey });
 
   initImageAnalyser = (cv: any) => {
     const init = () => {
@@ -622,13 +622,15 @@ export class ReactPainter extends React.Component<
     } else {
       this.initializeCanvas(width, height);
     }
-    document.addEventListener("keydown", this.keyPress);
+    document.addEventListener("keydown", this.keyDown);
+    document.addEventListener("keyup", this.keyUp);
   }
 
   componentWillUnmount() {
     cleanUpCanvas();
     revokeUrl(this.state.imageDownloadUrl);
-    document.removeEventListener("keydown", this.keyPress);
+    document.removeEventListener("keydown", this.keyDown);
+    document.removeEventListener("keyup", this.keyDown);
     removeLoadListener(this.initImageAnalyser);
     this.state.imgAnalyzer?.destroy();
   }
