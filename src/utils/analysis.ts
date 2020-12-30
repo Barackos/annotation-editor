@@ -169,7 +169,7 @@ export function drawContours(
 /**
  * Measures distance between 2 points
  */
-function distance(point1: Point, point2: Point) {
+export function distance(point1: Point, point2: Point) {
   const { x: x1, y: y1 } = point1;
   const { x: x2, y: y2 } = point2;
   return Math.hypot(y2 - y1, x2 - x1);

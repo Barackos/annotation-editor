@@ -5,6 +5,7 @@ import {
   initialize,
   rgbToString,
   findClosest,
+  distance,
 } from "../utils/analysis";
 import loadOpenCv, { removeLoadListener } from "../utils/loadOpenCv";
 import {
@@ -253,14 +254,14 @@ export class ReactPainter extends React.Component<
     ];
   };
 
-  findClosestVertex = (base: Point, include?: Point) => {
+  findClosestVertex = (base: Point, startPoint?: Point) => {
     const { imgAnalyzer } = this.state;
     if (!imgAnalyzer) return base;
     const threshold = 10;
     // Include first point as a snipping vertex
-    const points = [...imgAnalyzer.points_flattened].concat(
-      include ? [include] : []
-    );
+    if (startPoint && distance(base, startPoint) < threshold * 2)
+      return startPoint;
+    const points = imgAnalyzer.points_flattened;
     const closest = findClosest(base, points);
     if (closest.dist > threshold) return base;
     return closest.point;
