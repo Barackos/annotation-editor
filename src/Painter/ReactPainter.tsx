@@ -267,7 +267,7 @@ export class ReactPainter extends React.Component<
     return closest.point;
   };
 
-  handleMouseDown = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
+  handleMouseDown: CanvasProps["onMouseDown"] = (e) => {
     if (this.props.isDrawable) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const { undoSteps } = this.state;
@@ -299,7 +299,7 @@ export class ReactPainter extends React.Component<
     this.setState({ undoSteps });
   };
 
-  handleMouseMove = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
+  handleMouseMove: CanvasProps["onMouseMove"] = (e) => {
     const { isDrawing, undoSteps, shiftKey, currStepStartingIdx } = this.state;
     if (this.props.isDrawable && isDrawing) {
       const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
@@ -331,7 +331,7 @@ export class ReactPainter extends React.Component<
     }
   };
 
-  handleMouseUp = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
+  handleMouseUp: CanvasProps["onMouseUp"] = (e) => {
     const {
       isDrawing,
       undoSteps,
