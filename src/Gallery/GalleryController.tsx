@@ -1,16 +1,19 @@
 import { FunctionComponent, useCallback, useEffect, useState } from "react";
-import { fetchImages } from "../utils/storage";
 import { OnImageSelected } from "./types";
 import GalleryViewer from "./GalleryViewer";
 import GalleryViewerFallback from "./GalleryViewerFallback";
+import { GalleryImage } from "../utils/types";
 
 const interval = 20;
 interface GalleryProps {
   onImageSelected?: OnImageSelected;
+  images?: GalleryImage[];
 }
 
-const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {
-  const [images, setImages] = useState([]);
+const Gallery: FunctionComponent<GalleryProps> = ({
+  onImageSelected,
+  images,
+}) => {
   const [boundary, setBoundary] = useState(interval);
 
   const scrollListener = useCallback(() => {
@@ -19,10 +22,6 @@ const Gallery: FunctionComponent<GalleryProps> = ({ onImageSelected }) => {
       setBoundary(boundary + interval);
     }
   }, [boundary]);
-
-  useEffect(() => {
-    fetchImages().then((images) => setImages(images));
-  }, []);
 
   useEffect(() => {
     window.addEventListener("scroll", scrollListener);

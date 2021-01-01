@@ -19,6 +19,7 @@ import { observeUser, signOut } from "../utils/auth";
 import { loadAnnotation, saveAnnotation } from "../utils/realtimeDb";
 import firebaseTypes from "firebase/index";
 import TopBar from "./TopBar";
+import { fetchImages } from "../utils/storage";
 
 const drawerWidth = 240;
 
@@ -91,16 +92,18 @@ function App() {
   });
   const [opencv, setOpenCv] = useState(undefined);
   const [authOpen, showAuth] = useState(false);
+  const [image, setImage] = useState(undefined);
+  const [images, setImages] = useState([]);
+  const [showGallery, setGalleryShown] = useState(true);
 
   useEffect(() => {
+    fetchImages().then((images) => setImages(images));
     loadOpenCv((cv) => {
       setOpenCv(cv);
       setSnackMessage({ message: "OpenCV Loaded!", severity: "success" });
     });
   }, []);
 
-  const [image, setImage] = useState(undefined);
-  const [showGallery, setGalleryShown] = useState(true);
   const openGallery = () => {
     setAssist(false);
     setGalleryShown(!showGallery);
@@ -250,7 +253,10 @@ function App() {
                     Pick an Image:
                   </Typography>
                   <Suspense fallback={<GalleryFallback />}>
-                    <Gallery onImageSelected={onImageSelected} />
+                    <Gallery
+                      images={images}
+                      onImageSelected={onImageSelected}
+                    />
                   </Suspense>
                 </>
               ) : (
