@@ -1,4 +1,6 @@
-import { SavedAnnotation } from "./../utils/types";
+import { isEqual } from "lodash";
+import { findClosest } from "../utils/analysis";
+import { DataStep, Point, SavedAnnotation } from "./../utils/types";
 export function dataUrlToArrayBuffer(dataURI: string): [string, ArrayBuffer] {
   const type = dataURI.match(/:([^}]*);/)[1];
   const byteString = atob(dataURI.split(",")[1]);
@@ -157,6 +159,23 @@ export const makeAjaxHeadRequest = (
       reject(e);
     }
   });
+
+export function isCycle(steps: DataStep[]) {
+  return steps.length > 1 && isEqual(steps[0], steps[steps.length - 1]);
+}
+
+export function tryRemoveVertex(position: Point, list: DataStep[]) {
+  const { point, dist } = findClosest(position, list);
+  if (dist > 0 && dist < 30) {
+    const shape = isCycle(list);
+    const filtered = list.filter((step) => !isEqual(step, point));
+    if (shape && !isCycle(filtered)) {
+      filtered.push(filtered[0]);
+    }
+    return filtered.length > 1 ? filtered : [];
+  }
+  return list;
+}
 
 export function downloadObjectAsJson(
   exportObj: SavedAnnotation,

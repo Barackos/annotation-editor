@@ -1,3 +1,4 @@
+import { isEqual } from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import {
@@ -21,7 +22,9 @@ import {
   downloadObjectAsJson,
   fileToUrl,
   importImage,
+  isCycle,
   revokeUrl,
+  tryRemoveVertex,
 } from "./util";
 
 // disable touchAction, else the draw on canvas would not work
@@ -170,7 +173,9 @@ export class ReactPainter extends React.Component<
     imgAnalyzer: undefined,
   };
 
-  extractOffSetFromEvent = (e: React.SyntheticEvent<HTMLCanvasElement>) => {
+  extractOffSetFromEvent = (
+    e: React.SyntheticEvent<HTMLCanvasElement>
+  ): Point => {
     const {
       offsetX,
       offsetY,
@@ -181,8 +186,8 @@ export class ReactPainter extends React.Component<
     // If offset coords are directly on the event we use them
     if (offsetX && offsetY) {
       return {
-        offsetX: offsetX * this.scalingFactor,
-        offsetY: offsetY * this.scalingFactor,
+        x: offsetX * this.scalingFactor,
+        y: offsetY * this.scalingFactor,
       };
     }
     // Otherwise we need to calculate them themselves
@@ -195,10 +200,7 @@ export class ReactPainter extends React.Component<
     const rect = this.canvasRef.getBoundingClientRect();
     const x = (clientX - rect.left) * this.scalingFactor;
     const y = (clientY - rect.top) * this.scalingFactor;
-    return {
-      offsetX: x,
-      offsetY: y,
-    };
+    return { x, y };
   };
 
   initializeCanvas = (
@@ -254,24 +256,24 @@ export class ReactPainter extends React.Component<
     ];
   };
 
-  findClosestVertex = (base: Point, startPoint?: Point) => {
+  findClosestVertex = (base: Point, startPoint?: Point, threshold?: number) => {
     const { imgAnalyzer } = this.state;
     if (!imgAnalyzer) return base;
-    const threshold = 10;
+    const thresh = threshold || 10;
     // Include first point as a snipping vertex
-    if (startPoint && distance(base, startPoint) < threshold * 2)
+    if (startPoint && distance(base, startPoint) < thresh * 2)
       return startPoint;
     const points = imgAnalyzer.points_flattened;
     const closest = findClosest(base, points);
-    if (closest.dist > threshold) return base;
+    if (closest.dist > thresh) return base;
     return closest.point;
   };
 
   handleMouseDown: CanvasProps["onMouseDown"] = (e) => {
+    const mousePosition = this.extractOffSetFromEvent(e);
     if (this.props.isDrawable) {
-      const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const { undoSteps } = this.state;
-      const { x, y } = this.findClosestVertex({ x: offsetX, y: offsetY });
+      const { x, y } = this.findClosestVertex(mousePosition);
       this.lastX = x;
       this.lastY = y;
 
@@ -280,6 +282,20 @@ export class ReactPainter extends React.Component<
         currStepStartingIdx: undoSteps.length,
       });
     }
+    if (e.button === 1) {
+      this.removeStep(mousePosition);
+    }
+  };
+
+  removeStep = (mousePosition: Point) => {
+    const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
+    const remover = (list: DataStep[]) => tryRemoveVertex(mousePosition, list);
+    this.handleRedraw({
+      undoSteps: remover(undoSteps),
+      redoSteps: remover(redoSteps),
+      shapes: shapes.map(remover),
+      shapesRedo: shapesRedo.map(remover),
+    });
   };
 
   draw = (lastX: number, lastY: number, x: number, y: number) => {
@@ -301,14 +317,14 @@ export class ReactPainter extends React.Component<
 
   handleMouseMove: CanvasProps["onMouseMove"] = (e) => {
     const { isDrawing, undoSteps, shiftKey, currStepStartingIdx } = this.state;
+    const mousePosition = this.extractOffSetFromEvent(e);
     if (this.props.isDrawable && isDrawing) {
-      const { offsetX, offsetY } = this.extractOffSetFromEvent(e);
       const lastX = this.lastX;
       const lastY = this.lastY;
 
       const { x, y } = !shiftKey
-        ? this.findClosestVertex({ x: offsetX, y: offsetY }, undoSteps[0])
-        : { x: offsetX, y: offsetY };
+        ? this.findClosestVertex(mousePosition, undoSteps[0])
+        : mousePosition;
       if (x === lastX && y === lastY) return;
 
       let steps = undoSteps;
@@ -317,7 +333,7 @@ export class ReactPainter extends React.Component<
         steps.push({ x: lastX, y: lastY });
       }
 
-      if (!shiftKey && (x !== offsetX || y !== offsetY)) {
+      if (!shiftKey && !isEqual(mousePosition, { x, y })) {
         const firstSteps = steps.slice(0, currStepStartingIdx + 1);
         steps = [...firstSteps, { x, y }];
         const currIdx = steps.length;
@@ -361,7 +377,7 @@ export class ReactPainter extends React.Component<
           })()
         );
         // is new shape? deep equality check
-        if (this.isProperShape(steps)) {
+        if (isCycle(steps)) {
           shapes.push(steps);
           steps = [];
           this.ctx.closePath();
@@ -381,10 +397,6 @@ export class ReactPainter extends React.Component<
 
   canUndo = () => this.state.undoSteps.length > 0;
   canRedo = () => this.state.redoSteps.length > 0;
-
-  isProperShape = (steps: DataStep[]) =>
-    steps.length > 1 &&
-    JSON.stringify(steps[0]) === JSON.stringify(steps[steps.length - 1]);
 
   handleUndo = () => {
     const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
@@ -415,7 +427,7 @@ export class ReactPainter extends React.Component<
       redos = redoSteps;
     if (redos.length > 0) {
       undos.push(redos.pop());
-      if (this.isProperShape(undos)) {
+      if (isCycle(undos)) {
         shapes.push(undos);
         undos = [];
       }
