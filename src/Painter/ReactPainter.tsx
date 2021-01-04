@@ -62,6 +62,7 @@ export interface CanvasProps {
   onTouchMove: React.TouchEventHandler<HTMLCanvasElement>;
   onMouseUp: React.MouseEventHandler<HTMLCanvasElement>;
   onTouchEnd: React.TouchEventHandler<HTMLCanvasElement>;
+  onContextMenu: React.MouseEventHandler<HTMLCanvasElement>;
   style: React.CSSProperties;
   ref: (ref: HTMLCanvasElement) => void;
 }
@@ -276,7 +277,8 @@ export class ReactPainter extends React.Component<
   handleMouseDown: CanvasProps["onMouseDown"] = (e) => {
     const mousePosition = this.extractOffSetFromEvent(e);
     const isMiddleClick = e.button === 1;
-    if (this.props.isDrawable && !isMiddleClick) {
+    const isRightClick = e.button === 2;
+    if (this.props.isDrawable && !isMiddleClick && !isRightClick) {
       const { undoSteps } = this.state;
       const { x, y } = this.findClosestVertex(mousePosition);
       this.lastX = x;
@@ -293,13 +295,11 @@ export class ReactPainter extends React.Component<
   };
 
   removeStep = (mousePosition: Point) => {
-    const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
+    const { undoSteps, shapes } = this.state;
     const remover = (list: DataStep[]) => tryRemoveVertex(mousePosition, list);
     this.handleRedraw({
       undoSteps: remover(undoSteps),
-      redoSteps: remover(redoSteps),
       shapes: shapes.map(remover),
-      shapesRedo: shapesRedo.map(remover),
       vertexToRemove: undefined,
     });
   };
@@ -364,16 +364,17 @@ export class ReactPainter extends React.Component<
     }
   };
 
+  getAllDrawnSteps = () => {
+    const { undoSteps, shapes } = this.state;
+    return flatMap([undoSteps, ...shapes]);
+  };
+
   hintVertexToRemove = throttle(
     (mousePosition: Point, currentHintedVertex: DataStep) => {
-      const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
-      const allDrawnSteps = flatMap([
-        undoSteps,
-        redoSteps,
-        ...shapes,
-        ...shapesRedo,
-      ]);
-      const vertexToRemove = findVertexToRemove(mousePosition, allDrawnSteps);
+      const vertexToRemove = findVertexToRemove(
+        mousePosition,
+        this.getAllDrawnSteps()
+      );
       if (!vertexToRemove || !isEqual(vertexToRemove, currentHintedVertex)) {
         this.handleRedraw({ vertexToRemove });
       }
@@ -427,6 +428,21 @@ export class ReactPainter extends React.Component<
         }).then(() => setLoading(false));
       }
     }
+  };
+
+  onContextMenu: CanvasProps["onContextMenu"] = (e) => {
+    e.preventDefault();
+    const { undoSteps, shapes } = this.state;
+    const mousePosition = this.extractOffSetFromEvent(e);
+    const { point, dist } = findClosest(mousePosition, this.getAllDrawnSteps());
+    if (dist > 50) return;
+    const cleanIfVertex = (list: DataStep[]) =>
+      list.filter((step) => isEqual(step, point)).length > 0 ? [] : list;
+    this.handleRedraw({
+      undoSteps: cleanIfVertex(undoSteps),
+      shapes: shapes.map(cleanIfVertex),
+      vertexToRemove: undefined,
+    });
   };
 
   canUndo = () => this.state.undoSteps.length > 0;
@@ -607,6 +623,7 @@ export class ReactPainter extends React.Component<
       onTouchMove,
       onMouseUp,
       onTouchEnd,
+      onContextMenu,
       style,
       ref,
       ...restProps
@@ -616,6 +633,7 @@ export class ReactPainter extends React.Component<
       onMouseMove: composeFn(onMouseMove, this.handleMouseMove),
       onMouseUp: composeFn(onMouseUp, this.handleMouseUp),
       onTouchEnd: composeFn(onTouchEnd, this.handleMouseUp),
+      onContextMenu: composeFn(onContextMenu, this.onContextMenu),
       onTouchMove: composeFn(onTouchMove, this.handleMouseMove),
       onTouchStart: composeFn(onTouchStart, this.handleMouseDown),
       ref: composeFn(ref, (canvasRef: HTMLCanvasElement) => {

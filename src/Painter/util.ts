@@ -186,7 +186,13 @@ export function tryRemoveVertex(position: Point, list: DataStep[]) {
     if (shape && !isCycle(filtered)) {
       filtered.push(filtered[0]);
     }
-    return filtered.length > 1 ? filtered : [];
+    if (
+      (isCycle(filtered) && filtered.length > 3) ||
+      (!isCycle(filtered) && filtered.length > 1)
+    ) {
+      return filtered;
+    }
+    return [];
   }
   return list;
 }
