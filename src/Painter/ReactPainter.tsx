@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { flatMap, isEqual, throttle } from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import {
@@ -21,6 +21,7 @@ import {
   composeFn,
   downloadObjectAsJson,
   fileToUrl,
+  findVertexToRemove,
   importImage,
   isCycle,
   revokeUrl,
@@ -48,6 +49,7 @@ type HandleRedrawParams = Partial<
     | "shapes"
     | "shapesRedo"
     | "currStepStartingIdx"
+    | "vertexToRemove"
     | "isDrawing"
   >
 >;
@@ -111,6 +113,7 @@ export interface PainterState extends SavedAnnotation {
   currStepStartingIdx: number;
   imgAnalyzer: ImageAnalyzer;
   shiftKey: boolean;
+  vertexToRemove?: Point;
 }
 
 export class ReactPainter extends React.Component<
@@ -171,6 +174,7 @@ export class ReactPainter extends React.Component<
     currStepStartingIdx: 0,
     shiftKey: false,
     imgAnalyzer: undefined,
+    vertexToRemove: undefined,
   };
 
   extractOffSetFromEvent = (
@@ -256,22 +260,23 @@ export class ReactPainter extends React.Component<
     ];
   };
 
-  findClosestVertex = (base: Point, startPoint?: Point, threshold?: number) => {
+  findClosestVertex = (base: Point, startPoint?: Point) => {
     const { imgAnalyzer } = this.state;
     if (!imgAnalyzer) return base;
-    const thresh = threshold || 10;
+    const threshold = 10;
     // Include first point as a snipping vertex
-    if (startPoint && distance(base, startPoint) < thresh * 2)
+    if (startPoint && distance(base, startPoint) < threshold * 2)
       return startPoint;
     const points = imgAnalyzer.points_flattened;
     const closest = findClosest(base, points);
-    if (closest.dist > thresh) return base;
+    if (closest.dist > threshold) return base;
     return closest.point;
   };
 
   handleMouseDown: CanvasProps["onMouseDown"] = (e) => {
     const mousePosition = this.extractOffSetFromEvent(e);
-    if (this.props.isDrawable) {
+    const isMiddleClick = e.button === 1;
+    if (this.props.isDrawable && !isMiddleClick) {
       const { undoSteps } = this.state;
       const { x, y } = this.findClosestVertex(mousePosition);
       this.lastX = x;
@@ -280,9 +285,9 @@ export class ReactPainter extends React.Component<
       this.setState({
         isDrawing: true,
         currStepStartingIdx: undoSteps.length,
+        vertexToRemove: undefined,
       });
-    }
-    if (e.button === 1) {
+    } else if (isMiddleClick) {
       this.removeStep(mousePosition);
     }
   };
@@ -295,6 +300,7 @@ export class ReactPainter extends React.Component<
       redoSteps: remover(redoSteps),
       shapes: shapes.map(remover),
       shapesRedo: shapesRedo.map(remover),
+      vertexToRemove: undefined,
     });
   };
 
@@ -316,7 +322,13 @@ export class ReactPainter extends React.Component<
   };
 
   handleMouseMove: CanvasProps["onMouseMove"] = (e) => {
-    const { isDrawing, undoSteps, shiftKey, currStepStartingIdx } = this.state;
+    const {
+      isDrawing,
+      undoSteps,
+      shiftKey,
+      currStepStartingIdx,
+      vertexToRemove,
+    } = this.state;
     const mousePosition = this.extractOffSetFromEvent(e);
     if (this.props.isDrawable && isDrawing) {
       const lastX = this.lastX;
@@ -338,14 +350,36 @@ export class ReactPainter extends React.Component<
         steps = [...firstSteps, { x, y }];
         const currIdx = steps.length;
         this.setState({ currStepStartingIdx: currIdx });
-        this.handleRedraw({ undoSteps: steps, currStepStartingIdx: currIdx });
+        this.handleRedraw({
+          undoSteps: steps,
+          currStepStartingIdx: currIdx,
+        });
       } else {
         this.draw(lastX, lastY, x, y);
       }
       this.lastX = x;
       this.lastY = y;
+    } else {
+      this.hintVertexToRemove(mousePosition, vertexToRemove);
     }
   };
+
+  hintVertexToRemove = throttle(
+    (mousePosition: Point, currentHintedVertex: DataStep) => {
+      const { undoSteps, redoSteps, shapes, shapesRedo } = this.state;
+      const allDrawnSteps = flatMap([
+        undoSteps,
+        redoSteps,
+        ...shapes,
+        ...shapesRedo,
+      ]);
+      const vertexToRemove = findVertexToRemove(mousePosition, allDrawnSteps);
+      if (!vertexToRemove || !isEqual(vertexToRemove, currentHintedVertex)) {
+        this.handleRedraw({ vertexToRemove });
+      }
+    },
+    150
+  );
 
   handleMouseUp: CanvasProps["onMouseUp"] = (e) => {
     const {
@@ -451,6 +485,7 @@ export class ReactPainter extends React.Component<
     shapesRedo = this.state.shapesRedo,
     currStepStartingIdx = this.state.currStepStartingIdx,
     isDrawing = this.state.isDrawing,
+    vertexToRemove,
   }) => {
     const { width, height } = this.props;
     const ctx = this.ctx;
@@ -470,12 +505,18 @@ export class ReactPainter extends React.Component<
         });
         ctx.stroke();
         ctx.closePath();
-        ctx.save();
       };
       //Draw shapes first
       ctx.strokeStyle = rgbToString({ r: 0, g: 255, b: 0 });
-      ctx.save();
       shapes.forEach(drawSteps);
+
+      // Draw vertexToRemove
+      if (vertexToRemove) {
+        ctx.strokeStyle = rgbToString({ r: 255, g: 0, b: 0 });
+        ctx.beginPath();
+        ctx.arc(vertexToRemove.x, vertexToRemove.y, 2, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
 
       //Draw undo steps
       ctx.strokeStyle = rgbToString(this.state.colorRgb);
@@ -488,6 +529,7 @@ export class ReactPainter extends React.Component<
       shapesRedo,
       currStepStartingIdx,
       isDrawing,
+      vertexToRemove,
     });
   };
 

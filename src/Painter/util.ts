@@ -164,11 +164,25 @@ export function isCycle(steps: DataStep[]) {
   return steps.length > 1 && isEqual(steps[0], steps[steps.length - 1]);
 }
 
-export function tryRemoveVertex(position: Point, list: DataStep[]) {
-  const { point, dist } = findClosest(position, list);
+/**
+ * find vertex from a list with dist < 30
+ * @param position point to match distance with
+ * @param list list to search from
+ * @returns closest vertex, or undefined if not found
+ */
+export function findVertexToRemove(position: Point, list: DataStep[]) {
+  const { point: vertex, dist } = findClosest(position, list);
   if (dist > 0 && dist < 30) {
+    return vertex;
+  }
+  return undefined;
+}
+
+export function tryRemoveVertex(position: Point, list: DataStep[]) {
+  const vertex = findVertexToRemove(position, list) || {};
+  if (vertex) {
     const shape = isCycle(list);
-    const filtered = list.filter((step) => !isEqual(step, point));
+    const filtered = list.filter((step) => !isEqual(step, vertex));
     if (shape && !isCycle(filtered)) {
       filtered.push(filtered[0]);
     }
